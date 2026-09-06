@@ -11,7 +11,7 @@
   <div class="wrap narrow">
     <header class="masthead">
       <div>
-        <h1 class="greeting">OpenTabs</h1>
+        <h1 class="greeting brand"><span class="brand-tile" aria-hidden="true"><svg viewBox="0 0 32 32" width="17" height="17" fill="currentColor"><rect x="5.76" y="7.68" width="20.48" height="5.12" rx="1"/><rect x="5.76" y="14.72" width="16" height="4.48" rx="1" opacity=".62"/><rect x="5.76" y="21.12" width="12.16" height="4.48" rx="1" opacity=".62"/></svg></span><span class="brand-word"><span class="muted">Open</span>Tabs<span class="dot">.</span></span></h1>
         <div class="datel">Everything here lives in your browser. Nothing is sent to a server.</div>
       </div>
     </header>
@@ -114,6 +114,16 @@
       </div>
       <div class="tagrow" id="markettags"></div>
       <div id="marketlist"></div>
+
+      <div class="field" style="margin-top:26px">
+        <label>Publish one of yours</label>
+        <div class="hint">
+          Your API keys, calendar addresses and coordinates are stripped out before
+          anything leaves this browser. You can also copy a pack and send it to
+          somebody directly, which needs no account at all.
+        </div>
+        <div class="sharerow" id="sharerow"></div>
+      </div>
 
       <div class="field" style="margin-top:26px">
         <label for="packpaste">Add from a link or a pack</label>

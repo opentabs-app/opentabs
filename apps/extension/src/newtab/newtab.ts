@@ -91,6 +91,12 @@ async function main() {
     void ext.runtime.openOptionsPage();
   });
   setupAccount();
+  // Straight to the Marketplace pane, not the front of Settings. Landing on
+  // Groups and being expected to find the tab is how a link gets a
+  // reputation for not working.
+  document.getElementById("packs")?.addEventListener("click", () => {
+    void ext.tabs.create({ url: ext.runtime.getURL("settings.html#pane=market") });
+  });
 
   const saveLocal = (s: LocalState) => {
     void setLocal(KEY.local, s);

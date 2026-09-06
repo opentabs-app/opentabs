@@ -160,3 +160,33 @@ pre.probe:empty { display: none; }
   font: inherit; font-size: 0.85rem; color: var(--text-strong, #020202);
 }
 .modal-box .field { margin: 14px 0; }
+
+/* ---- the family wordmark ----
+   The same shape every product in the suite uses: a tinted tile holding the
+   product's mark, "Open" in muted grey, the name, then a period in the
+   product's accent. The tile and the dot are the only things carrying the
+   accent, so a primary button stays the loudest thing on the page.
+
+   `--app-opentabs` is declared here rather than in the token files so a
+   token refresh cannot silently drop it. `--blue` is #15b9eb, which is
+   already exactly the colour of the mark. */
+:root { --app-opentabs: var(--blue, #15b9eb); }
+
+h1.brand { display: flex; align-items: center; gap: 9px; margin: 0; }
+.brand-tile {
+  display: grid; place-items: center; width: 28px; height: 28px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--app-opentabs) 16%, transparent);
+  color: var(--app-opentabs);
+  flex: none;
+}
+.brand-tile svg { display: block; }
+.brand-word { letter-spacing: -0.03em; }
+.brand-word .muted { color: var(--text-muted, #7c7c7c); font-weight: 400; }
+.brand-word .dot { color: var(--app-opentabs); }
+
+/* One button per group you could publish. The alternative was a sentence
+   telling people to go and find the small "share" control in the group list,
+   which is a worse answer to "how do I add to the marketplace". */
+.sharerow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.sharerow .hint { width: 100%; margin: 0; }

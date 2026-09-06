@@ -461,6 +461,37 @@ test("the new tab offers to sign in, and claims no account until there is one", 
   await expect(page.locator(".masthead-right .iconbtn")).toHaveCount(2);
 });
 
+test("the new tab names the marketplace, and lands on its pane", async ({
+  context,
+  extensionId,
+}) => {
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/newtab.html`);
+
+  const packs = page.locator("#packs");
+  await expect(packs).toBeVisible();
+  // Labelled, not a bare glyph: a third unlabelled icon up there reads as
+  // another setting rather than as somewhere to go.
+  await expect(packs).toContainText("Packs");
+  await expect(packs.locator(".brand-tile svg")).toHaveCount(1);
+
+  const opened = context.waitForEvent("page");
+  await packs.click();
+  const settings = await opened;
+  await settings.waitForLoadState();
+
+  // On the Marketplace pane, not the front of Settings — landing on Groups
+  // and expecting someone to find the tab is how a link gets a reputation
+  // for not working.
+  expect(settings.url()).toContain("settings.html#pane=market");
+  await expect(settings.locator("#pane-market")).toHaveClass(/on/);
+  await expect(settings.locator('#nav button[data-pane="market"]')).toHaveClass(/on/);
+
+  // And the answer to "how do I add one of mine" is on that pane, as
+  // buttons rather than as a sentence pointing at another pane.
+  await expect(settings.locator("#sharerow .btn").first()).toContainText("Share");
+});
+
 test("opening the new tab still costs no network request", async ({ context, extensionId }) => {
   // The account button talks to the worker, not the network — and the whole
   // point of this page is that opening it is one storage read and a paint. A

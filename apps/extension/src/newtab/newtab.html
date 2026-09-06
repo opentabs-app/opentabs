@@ -20,6 +20,22 @@
       <div class="masthead-right">
         <span class="datel mono" id="tabcount"></span>
         <!--
+          The marketplace, named and marked rather than hidden behind a
+          settings pane nobody opens. It carries the product's own tile so
+          the packs read as part of OpenTabs and not somewhere else you are
+          being sent.
+        -->
+        <button class="packsbtn" id="packs" title="Browse packs — topics and themes other people assembled">
+          <span class="brand-tile" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="13" height="13" fill="currentColor">
+              <rect x="5.76" y="7.68" width="20.48" height="5.12" rx="1"/>
+              <rect x="5.76" y="14.72" width="16" height="4.48" rx="1" opacity=".62"/>
+              <rect x="5.76" y="21.12" width="12.16" height="4.48" rx="1" opacity=".62"/>
+            </svg>
+          </span>
+          <span>Packs</span>
+        </button>
+        <!--
           Rendered signed-out. The worker is asked for the real state right
           after paint and swaps the icon if it differs — asking first would
           put a message round-trip on the critical path of a page that opens
