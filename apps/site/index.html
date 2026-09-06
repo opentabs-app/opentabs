@@ -8,16 +8,33 @@
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 <meta name="theme-color" content="#101014" />
 
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" type="image/png" sizes="16x16" href="/icon-16.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
+<link rel="icon" type="image/png" sizes="48x48" href="/icon-48.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+<link rel="apple-touch-icon" href="/icon-180.png" />
+
 <link rel="canonical" href="https://opentabs.app/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="OpenTabs" />
 <meta property="og:title" content="OpenTabs — your open tabs, grouped, on every new tab" />
-<meta property="og:description" content="The tabs you already have open, grouped by site and closable, above a briefing you choose. No account, no tracking." />
+<meta property="og:description" content="The tabs you already have open, grouped by site and closable, above a briefing you choose. Free, no account, no tracking." />
 <meta property="og:url" content="https://opentabs.app/" />
-<meta name="twitter:card" content="summary" />
+<!-- Absolute, and it must be. A crawler has no page to resolve a relative
+     path against, so "/og-image.png" is the difference between a card with
+     a picture and a bare URL. Telegram in particular then often drops the
+     description too, which is how a link ends up looking like nothing. -->
+<meta property="og:image" content="https://opentabs.app/og-image.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="OpenTabs — your open tabs, grouped, on every new tab" />
+<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="OpenTabs — your open tabs, grouped, on every new tab" />
-<meta name="twitter:description" content="The tabs you already have open, grouped by site and closable, above a briefing you choose. No account, no tracking." />
+<meta name="twitter:description" content="The tabs you already have open, grouped by site and closable, above a briefing you choose." />
+<meta name="twitter:image" content="https://opentabs.app/og-image.png" />
 
 <!-- Structured data describing what is already on the page, not extra
      hidden claims. The FAQ block is the one answer engines quote, so each
@@ -31,6 +48,7 @@
   "applicationCategory": "BrowserApplication",
   "operatingSystem": "Chrome 121+, Edge, Firefox",
   "url": "https://opentabs.app/",
+  "image": "https://opentabs.app/og-image.png",
   "description": "A browser extension that replaces the new tab page with your actual open tabs, grouped by site and closable, above a briefing you choose: markets, weather, news topics, repositories, calendar and a to-do list. Everything runs on your own machine. No account, no tracking, no server holding your settings.",
   "license": "https://opensource.org/licenses/MIT",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
