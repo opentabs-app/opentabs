@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "OpenTabs",
+  "version": "0.1.0",
+  "description": "Your open tabs, grouped \u2014 above a calm briefing you choose. No account, no tracking.",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "settings.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "OpenTabs settings"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "alarms",
+    "idle",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "optional_permissions": [
+    "bookmarks",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://api.open-meteo.com/*",
+    "https://geocoding-api.open-meteo.com/*",
+    "https://opentabs.app/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "opentabs@opentabs.app",
+      "strict_min_version": "121.0"
+    }
+  }
+}

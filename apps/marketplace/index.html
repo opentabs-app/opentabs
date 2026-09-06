@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenTabs packs</title>
+  <meta name="description" content="Topics, sources and themes for OpenTabs, shared by the people who assembled them." />
+</head>
+<body>
+  <div class="wrap">
+    <header class="masthead">
+      <div>
+        <a class="brand" href="#/">OpenTabs <span>packs</span></a>
+        <p class="tagline">
+          A topic someone spent an hour assembling, as one click. Nothing about you is
+          stored to browse, and nothing is stored to install.
+        </p>
+      </div>
+      <button class="btn" id="auth">Sign in</button>
+    </header>
+
+    <div class="controls">
+      <nav class="sortnav" id="sortnav">
+        <button data-sort="trending" class="on">Trending</button>
+        <button data-sort="top">Top</button>
+        <button data-sort="new">New</button>
+      </nav>
+      <input id="search" type="search" placeholder="Search packs — “real estate”, “arxiv”, a name…" aria-label="Search packs" />
+    </div>
+
+    <div class="tagrow" id="tagrow"></div>
+
+    <main id="view"></main>
+
+    <footer class="footer">
+      <span>Publish from OpenTabs: Settings → the group you want → Share.</span>
+      <a href="https://opentabs.app">OpenTabs</a>
+    </footer>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

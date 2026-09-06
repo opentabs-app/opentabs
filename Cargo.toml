@@ -1,0 +1,45 @@
+# OpenTabs. Its own workspace, deliberately excluded from the openapps root
+# (see that Cargo.toml's `exclude`) so a path dependency never drags this
+# tree into the platform workspace.
+[workspace]
+resolver = "2"
+members = ["crates/tabs-core", "crates/tabs-feedgen", "crates/tabs-market", "apps/market-api"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/openapps/opentabs"
+
+[workspace.dependencies]
+tabs-core = { path = "crates/tabs-core" }
+tabs-market = { path = "crates/tabs-market" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# wasm-bindgen pins EXACTLY: the crate's generated glue is schema-versioned
+# against the CLI binary, and a mismatch fails at bindgen time with a message
+# that does not name the real cause. CLI here is 0.2.126 — keep in lockstep.
+wasm-bindgen = "=0.2.126"
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
+
+# feedgen and the market API (which fetches the platform's JWKS)
+ureq = { version = "2", features = ["tls"] }
+anyhow = "1"
+
+# marketplace only
+sha2 = "0.10"
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
+tower-http = { version = "0.5", features = ["cors", "limit", "trace"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
+# Verification only. The market API holds no signing key and mints no token;
+# it checks the platform's Ed25519 signature against the published public one.
+ed25519-dalek = "2"
+
+[profile.release]
+lto = "thin"
+strip = "symbols"
+opt-level = "s"

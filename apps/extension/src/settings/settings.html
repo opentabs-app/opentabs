@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en" class="oa-auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenTabs settings</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+  <link rel="stylesheet" href="./settings.css" />
+</head>
+<body>
+  <div class="wrap narrow">
+    <header class="masthead">
+      <div>
+        <h1 class="greeting">OpenTabs</h1>
+        <div class="datel">Everything here lives in your browser. Nothing is sent to a server.</div>
+      </div>
+    </header>
+
+    <nav class="tabsnav" id="nav">
+      <button data-pane="groups" class="on">Groups</button>
+      <button data-pane="topics">Topics</button>
+      <button data-pane="calendar">Calendar</button>
+      <button data-pane="market">Marketplace</button>
+      <button data-pane="general">General</button>
+      <button data-pane="data">Import &amp; export</button>
+    </nav>
+
+    <section class="pane on" id="pane-groups">
+      <p class="hint">
+        Four groups are on by default, deliberately — a new tab you open fifty times a day
+        should be calm. Turn on as much as you like.
+      </p>
+      <div class="addrow" id="bmadder"></div>
+      <div id="grouplist"></div>
+    </section>
+
+    <section class="pane" id="pane-topics">
+      <p class="hint">
+        A topic is a name and some sources. Type any subject — the query sources cover it
+        with no setup. Seven ship as examples; there is no difference between those and one
+        you invent.
+      </p>
+      <div class="addrow">
+        <input id="newtopic" placeholder="New topic — e.g. Semiconductor Supply Chain" />
+        <button class="btn" id="addtopic">Add topic</button>
+      </div>
+      <div id="topiclist"></div>
+
+      <div class="head" style="margin-top:34px">
+        <label style="font-size:0.8rem;font-weight:500">X searches</label>
+      </div>
+      <p class="hint">
+        One card per thing you watch. Dates are a rolling window by default, so a saved
+        search stays current instead of freezing on the day you made it.
+      </p>
+      <div class="addrow">
+        <input id="newx" placeholder="New X search — e.g. @elonmusk" />
+        <button class="btn" id="addx">Add X search</button>
+      </div>
+      <div id="xlist"></div>
+    </section>
+
+    <section class="pane" id="pane-calendar">
+      <p class="hint">
+        Subscribe with the secret iCal address your calendar gives you. Works with Google,
+        Outlook, iCloud, Fastmail, Proton, Notion, Linear and Cal.com — one mechanism, no
+        sign-in.
+      </p>
+      <p class="warn">
+        That address is a password in URL form: anyone holding it can read your calendar.
+        It is stored on this device only, and is left out of exports unless you tick the box.
+      </p>
+      <div class="addrow">
+        <input id="newcallabel" placeholder="Label — e.g. Work" style="max-width:190px" />
+        <input id="newcal" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" />
+        <button class="btn" id="addcal">Add calendar</button>
+      </div>
+      <div id="callist"></div>
+      <div class="field" style="margin-top:18px">
+        <button class="btn" id="calprobe">Show what my calendar actually sends</button>
+        <div class="hint">
+          Fetches the first calendar and prints the raw date lines beside how they were
+          read. If the times look wrong, this is what says why.
+        </div>
+        <pre id="calprobeout" class="probe"></pre>
+      </div>
+      <details class="help">
+        <summary>Where do I find that address?</summary>
+        <ul>
+          <li><b>Google</b> — Settings → your calendar → “Secret address in iCal format”.</li>
+          <li><b>Outlook / Microsoft 365</b> — Settings → Calendar → Shared calendars → Publish, then copy the ICS link.</li>
+          <li><b>Apple iCloud</b> — right-click the calendar → Share Calendar → Public Calendar, then copy the link.</li>
+          <li><b>Notion / Linear / Cal.com</b> — look for “Subscribe” or “iCal” in the calendar view.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="pane" id="pane-market">
+      <p class="hint">
+        Topics, sources and themes other people assembled. Installing adds a group beside
+        what you have — nothing you configured is ever replaced.
+      </p>
+      <p class="warn" id="marketaccess" hidden>
+        OpenTabs needs access to the marketplace to show anything here. Nothing about you
+        is sent: it is a plain read, with no account and no cookie.
+      </p>
+      <div class="controls">
+        <div class="sortnav" id="marketsort">
+          <button data-sort="trending" class="on">Trending</button>
+          <button data-sort="top">Top</button>
+          <button data-sort="new">New</button>
+        </div>
+        <input id="marketsearch" type="search" placeholder="Search packs…" aria-label="Search packs" />
+      </div>
+      <div class="tagrow" id="markettags"></div>
+      <div id="marketlist"></div>
+
+      <div class="field" style="margin-top:26px">
+        <label for="packpaste">Add from a link or a pack</label>
+        <div class="hint">
+          Paste a marketplace link, or a pack document itself. It is checked before
+          anything is applied, and you see what it adds first.
+        </div>
+        <div class="addrow">
+          <input id="packpaste" placeholder="https://market.opentabs.app/… or a pack" />
+          <button class="btn" id="packload">Load</button>
+        </div>
+        <div id="packpreview"></div>
+      </div>
+    </section>
+
+    <section class="pane" id="pane-general">
+      <div class="field">
+        <label for="assistant">Assistant for the prompt bar</label>
+        <select id="assistant">
+          <option value="claude">Claude</option>
+          <option value="chatgpt">ChatGPT</option>
+          <option value="perplexity">Perplexity</option>
+          <option value="google">Google</option>
+        </select>
+        <div class="hint">Override per query with <code>!c</code>, <code>!p</code>, <code>!g</code>.</div>
+      </div>
+      <div class="field">
+        <label for="theme">Theme</label>
+        <select id="theme">
+          <option value="auto">Follow the system</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>What each group is actually doing</label>
+        <div class="hint">
+          The worker's own view, not the settings above — when a card is empty this says why.
+        </div>
+        <button class="btn" id="rundiag">Run diagnostics</button>
+        <div id="diag"></div>
+      </div>
+      <div class="field">
+        <label>Why my New Tab pages are not closing</label>
+        <div class="hint">
+          Lists every open tab with how long since you last looked at it, and either
+          why it is about to close or which guard is keeping it.
+        </div>
+        <button class="btn" id="runprune">Show what auto-close sees</button>
+        <pre id="pruneout" class="probe"></pre>
+      </div>
+      <div class="field">
+        <label>Site access</label>
+        <div class="hint" id="perms"></div>
+        <button class="btn" id="grantall">Grant access for everything I've enabled</button>
+      </div>
+    </section>
+
+    <section class="pane" id="pane-data">
+      <p class="hint">
+        Your whole configuration is one document. Copy the string below into OpenTabs on
+        another browser to move everything across — no account, nothing stored on a server.
+      </p>
+      <div class="field">
+        <label for="configstr">Config string</label>
+        <textarea id="configstr" rows="4" spellcheck="false"></textarea>
+        <div class="row-actions">
+          <button class="btn" id="copystr">Copy</button>
+          <button class="btn" id="applystr">Apply pasted string</button>
+          <label class="inline"><input type="checkbox" id="withsecrets" /> include calendar addresses</label>
+        </div>
+      </div>
+      <div class="field">
+        <label for="raw">Raw config (JSON)</label>
+        <div class="hint">
+          The schema is published in <code>docs/config.schema.json</code>, so an agent can
+          write this for you.
+        </div>
+        <textarea id="raw" rows="16" spellcheck="false"></textarea>
+        <div class="row-actions">
+          <button class="btn" id="validate">Check</button>
+          <button class="btn primary" id="saveraw">Save</button>
+          <span id="rawstatus" class="hint"></span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Start over</label>
+        <button class="btn danger" id="reset">Reset to defaults</button>
+      </div>
+    </section>
+
+    <div class="savebar" id="savebar">Saved</div>
+  </div>
+  <script type="module" src="./settings.ts"></script>
+</body>
+</html>

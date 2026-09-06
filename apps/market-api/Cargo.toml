@@ -1,0 +1,23 @@
+[package]
+name = "market-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OpenTabs marketplace API: listings, likes and installs, holding no preferences."
+
+[dependencies]
+tabs-core = { workspace = true }
+tabs-market = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+axum = { workspace = true }
+tokio = { workspace = true }
+tower-http = { workspace = true }
+rusqlite = { workspace = true }
+ureq = { workspace = true }
+ed25519-dalek = { workspace = true }
+
+[dev-dependencies]
+tower = { version = "0.4", features = ["util"] }
