@@ -43,6 +43,13 @@ jobs:
       - run: cargo install wasm-bindgen-cli --version ${{ env.WASM_BINDGEN_VERSION }} --locked
       - working-directory: apps/extension
         run: npm ci
+      # Before the typecheck, not as part of the build. `src/wasm-gen/` is
+      # generated output and is not committed, so `tsc` has nothing to resolve
+      # `../wasm-gen/tabs_core.js` against until this has run. On a developer
+      # machine the directory is already there from an earlier build, which is
+      # why this only ever fails on a clean checkout — i.e. only in CI.
+      - working-directory: apps/extension
+        run: npm run build:wasm
       - working-directory: apps/extension
         run: npm run typecheck
       - working-directory: apps/extension
