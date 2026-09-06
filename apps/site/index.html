@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="oa-dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -62,7 +62,7 @@
     {
       "@type": "Question",
       "name": "Does OpenTabs need an account?",
-      "acceptedAnswer": { "@type": "Answer", "text": "No. OpenTabs works completely without one, and your settings live in your own browser profile rather than on a server. An OpenApps account is optional and is only used to publish a pack to the marketplace or to like one — never to store your configuration." }
+      "acceptedAnswer": { "@type": "Answer", "text": "No. OpenTabs works completely without one, and your settings live in your own browser profile rather than on a server. Signing in is optional and is only used to publish a pack to the marketplace or to like one — never to store your configuration." }
     },
     {
       "@type": "Question",
@@ -88,97 +88,156 @@
 }
 </script>
 
+<link rel="stylesheet" href="/tokens/styles.css" />
 <style>
-  :root {
-    color-scheme: dark;
-    --bg: #101014;
-    --sunken: #17171d;
-    --card: #1b1b22;
-    --line: #2c2c36;
-    --strong: #f4f4f6;
-    --body: #c3c3cc;
-    --muted: #8b8b98;
-    --accent: #7aa2f7;
-    --radius: 12px;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-  }
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--body);
-    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 0 22px; }
-  a { color: var(--accent); }
+  /* Page-level layout only. Every colour, size, radius and weight below comes
+     from the shared design tokens — nothing here invents a value.
 
-  header.site { padding: 26px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .brand { font-weight: 650; color: var(--strong); text-decoration: none; font-size: 1.05rem; letter-spacing: -0.01em; }
-  header.site nav { display: flex; gap: 18px; font-size: 0.9rem; }
-  header.site nav a { color: var(--muted); text-decoration: none; }
-  header.site nav a:hover { color: var(--strong); }
+     The one local definition is the product accent, and it is declared here
+     rather than edited into the vendored token files so that refreshing them
+     cannot silently drop it. `--blue` is #15b9eb, which is already exactly
+     the colour of the mark. */
+  :root { --app-opentabs: var(--accent-2); }
 
-  .hero { padding: 44px 0 30px; }
-  h1 { font-size: clamp(2rem, 5.2vw, 2.9rem); line-height: 1.12; letter-spacing: -0.025em; color: var(--strong); margin: 0 0 16px; }
-  .lede { font-size: 1.12rem; max-width: 58ch; margin: 0 0 26px; }
-  .cta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  body { margin: 0; background: var(--bg-page); color: var(--text-body); }
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 0 var(--space-6); }
+
+  /* --- the family wordmark ---
+     Every product in the suite uses this shape: a tinted tile holding the
+     product's own mark, then "Open" in muted grey, the product name, and a
+     period in the product's accent. */
+  .brand { display: flex; align-items: center; gap: var(--space-2); text-decoration: none; }
+  .brand-tile {
+    display: grid; place-items: center; width: 26px; height: 26px;
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--app-opentabs) 16%, transparent);
+    color: var(--app-opentabs);
+  }
+  .brand-tile svg { display: block; }
+  .brand-word {
+    font: var(--weight-medium) var(--text-lg)/1 var(--font-display, var(--font-sans));
+    letter-spacing: var(--tracking-display);
+    color: var(--text-strong);
+  }
+  .brand-word .muted { color: var(--text-muted); }
+  .brand-word .dot { color: var(--app-opentabs); }
+
+  header.site {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in oklab, var(--bg-page) 88%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: var(--border-width) solid var(--border-hairline);
+  }
+  header.site .wrap {
+    display: flex; align-items: center; gap: var(--space-4); height: 4rem;
+  }
+  header.site nav {
+    margin-left: auto; display: flex; align-items: center; gap: var(--space-5);
+    font-size: var(--text-sm);
+  }
+  header.site nav a { color: var(--text-muted); text-decoration: none; }
+  header.site nav a:hover { color: var(--text-strong); }
+
+  .hero { padding: var(--space-16) 0 var(--space-12); }
+  h1 {
+    font: var(--weight-bold) clamp(2rem, 5.2vw, var(--text-6xl))/var(--leading-tight)
+          var(--font-display, var(--font-sans));
+    letter-spacing: var(--tracking-display);
+    color: var(--text-strong);
+    margin: 0 0 var(--space-4);
+  }
+  .lede {
+    font-size: var(--text-lg); line-height: var(--leading-relaxed);
+    max-width: 58ch; margin: 0 0 var(--space-7);
+  }
+  .cta { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
   .btn {
-    display: inline-block; padding: 11px 18px; border-radius: 9px;
-    border: 1px solid var(--line); background: var(--card); color: var(--strong);
-    text-decoration: none; font-size: 0.94rem; font-weight: 550;
+    display: inline-block; padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--border-hairline);
+    background: var(--surface-card); color: var(--text-strong);
+    text-decoration: none; font-size: var(--text-sm); font-weight: var(--weight-medium);
   }
-  .btn.primary { background: var(--strong); color: var(--bg); border-color: var(--strong); }
-  .btn:hover { border-color: var(--muted); }
-  .cta small { color: var(--muted); font-size: 0.85rem; }
+  /* Brand green for the primary action on every product's page, which is why
+     the tile and the dot are the only things carrying the product accent. */
+  .btn.primary {
+    background: var(--brand); color: var(--brand-contrast); border-color: var(--brand);
+  }
+  .btn:hover { border-color: var(--border-strong); }
+  .cta small { color: var(--text-muted); font-size: var(--text-xs); }
 
-  section { padding: 34px 0; border-top: 1px solid var(--line); }
-  h2 { font-size: 1.3rem; color: var(--strong); margin: 0 0 6px; letter-spacing: -0.015em; }
-  h2 + p.sub { color: var(--muted); margin: 0 0 22px; max-width: 62ch; }
-  h3 { font-size: 1rem; color: var(--strong); margin: 0 0 6px; }
+  section { padding: var(--space-10) 0; border-top: var(--border-width) solid var(--border-hairline); }
+  h2 {
+    font: var(--weight-medium) var(--text-2xl)/var(--leading-snug) var(--font-display, var(--font-sans));
+    letter-spacing: var(--tracking-heading);
+    color: var(--text-strong); margin: 0 0 var(--space-2);
+  }
+  h2 + p.sub { color: var(--text-muted); margin: 0 0 var(--space-6); max-width: 62ch; }
+  h3 { font-size: var(--text-base); font-weight: var(--weight-medium); color: var(--text-strong); margin: 0 0 var(--space-2); }
 
-  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
-  .card p { margin: 0; font-size: 0.92rem; color: var(--body); }
+  .grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card {
+    background: var(--surface-card);
+    border: var(--border-width) solid var(--border-hairline);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5) var(--space-5);
+  }
+  .card p { margin: 0; font-size: var(--text-sm); color: var(--text-body); }
 
-  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-  ol.steps li { counter-increment: s; padding-left: 40px; position: relative; font-size: 0.95rem; }
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-3); }
+  ol.steps li { counter-increment: s; padding-left: var(--space-10); position: relative; font-size: var(--text-sm); }
   ol.steps li::before {
     content: counter(s); position: absolute; left: 0; top: 1px;
-    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
-    background: var(--sunken); border: 1px solid var(--line); color: var(--muted);
-    font-size: 0.78rem; font-variant-numeric: tabular-nums;
+    width: 26px; height: 26px; border-radius: var(--radius-full);
+    display: grid; place-items: center;
+    background: var(--bg-sunken);
+    border: var(--border-width) solid var(--border-hairline);
+    color: var(--text-muted);
+    font-size: var(--text-2xs); font-variant-numeric: tabular-nums;
   }
-  ol.steps strong { color: var(--strong); font-weight: 600; }
+  ol.steps strong { color: var(--text-strong); font-weight: var(--weight-medium); }
 
   dl.faq { margin: 0; }
-  dl.faq dt { color: var(--strong); font-weight: 600; margin: 20px 0 4px; }
+  dl.faq dt { color: var(--text-strong); font-weight: var(--weight-medium); margin: var(--space-6) 0 var(--space-1); }
   dl.faq dt:first-child { margin-top: 0; }
-  dl.faq dd { margin: 0; font-size: 0.95rem; }
+  dl.faq dd { margin: 0; font-size: var(--text-sm); }
 
   pre {
-    background: var(--sunken); border: 1px solid var(--line); border-radius: 10px;
-    padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: 0.82rem;
-    color: var(--body); margin: 0;
+    background: var(--bg-sunken);
+    border: var(--border-width) solid var(--border-hairline);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5); overflow-x: auto;
+    font-family: var(--font-mono); font-size: var(--text-xs);
+    color: var(--text-body); margin: 0;
   }
 
-  footer.site { border-top: 1px solid var(--line); padding: 26px 0 44px; color: var(--muted); font-size: 0.88rem; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
-  footer.site a { color: var(--muted); }
+  footer.site {
+    border-top: var(--border-width) solid var(--border-hairline);
+    margin-top: var(--space-10);
+    color: var(--text-muted); font-size: var(--text-xs);
+  }
+  footer.site .wrap {
+    padding-top: var(--space-7); padding-bottom: var(--space-12);
+    display: flex; flex-wrap: wrap; gap: var(--space-4); justify-content: space-between;
+  }
+  footer.site a { color: var(--text-muted); }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <header class="site">
-    <a class="brand" href="/">OpenTabs</a>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="brand-tile" aria-hidden="true"><svg viewBox="0 0 32 32" width="16" height="16" fill="currentColor"><rect x="5.76" y="7.68" width="20.48" height="5.12" rx="1"/><rect x="5.76" y="14.72" width="16" height="4.48" rx="1" opacity=".62"/><rect x="5.76" y="21.12" width="12.16" height="4.48" rx="1" opacity=".62"/></svg></span><span class="brand-word"><span class="muted">Open</span>Tabs<span class="dot">.</span></span></a>
     <nav>
       <a href="#how">How it works</a>
       <a href="https://market.opentabs.app">Packs</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/opentabs-app/OpenTabs">Source</a>
     </nav>
-  </header>
+  </div>
+</header>
 
+<div class="wrap">
   <div class="hero">
     <h1>Your open tabs, grouped, on every new tab.</h1>
     <p class="lede">
@@ -253,7 +312,7 @@
     <h2>Questions</h2>
     <dl class="faq">
       <dt>Does it need an account?</dt>
-      <dd>No. OpenTabs works completely without one and your settings never leave your browser profile. An OpenApps account is optional and buys exactly two things: publishing a pack to the marketplace, and liking one.</dd>
+      <dd>No. OpenTabs works completely without one and your settings never leave your browser profile. Signing in is optional and buys exactly two things: publishing a pack to the marketplace, and liking one.</dd>
 
       <dt>What does it send anywhere?</dt>
       <dd>Only the requests needed to fill the groups you turned on. There is no analytics and no telemetry. A group you did not enable makes no request at all.</dd>
@@ -269,15 +328,18 @@
     </dl>
   </section>
 
-  <footer class="site">
-    <span>OpenTabs — part of <a href="https://openapps.network">OpenApps</a>.</span>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <span>OpenTabs — free and open source, under the MIT licence.</span>
     <span>
       <a href="https://market.opentabs.app">Packs</a> ·
       <a href="https://github.com/opentabs-app/OpenTabs">Source</a> ·
       <a href="/privacy.html">Privacy</a>
     </span>
-  </footer>
-</div>
+  </div>
+</footer>
 
 </body>
 </html>

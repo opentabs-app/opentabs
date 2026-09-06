@@ -31,10 +31,10 @@
  * extension for the e2e suite, so the card is authored as HTML — real
  * typography, real kerning — and screenshotted at exactly 1200×630.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { ico, png, svg } from "../../extension/scripts/icon.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -59,32 +59,42 @@ for (const dir of [out, market]) {
 
 // ---------- the link-preview card ----------
 
+// The card is the product's face in every chat app, so it uses the same
+// tokens the site does rather than a second palette that drifts from it.
+// `oa-dark` because both sites force dark.
 const card = (title, dim, lede, pills) => `<!doctype html>
-<meta charset="utf-8">
+<html class="oa-dark"><meta charset="utf-8">
+<link rel="stylesheet" href="./tokens/styles.css">
 <style>
-  @font-face { font-family: x; src: local("Helvetica Neue"), local("Arial"); }
+  :root { --app-opentabs: var(--accent-2); }
   * { margin: 0; box-sizing: border-box; }
   body {
     width: 1200px; height: 630px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 26px;
-    background: #101014;
-    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
-    color: #f4f4f6;
+    align-items: center; justify-content: center; gap: var(--space-7);
+    background: var(--bg-page); color: var(--text-strong);
+    font-family: var(--font-sans);
     /* A faint grid, so the ground is not a flat rectangle at the size these
        are actually looked at — about 500px wide in a chat list. */
     background-image:
-      linear-gradient(rgba(122,162,247,.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(122,162,247,.045) 1px, transparent 1px);
+      linear-gradient(color-mix(in oklab, var(--app-opentabs) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, var(--app-opentabs) 5%, transparent) 1px, transparent 1px);
     background-size: 48px 48px;
   }
   .mark { width: 112px; height: 112px; border-radius: 25px; }
-  h1 { font-size: 68px; letter-spacing: -0.035em; font-weight: 700; }
-  h1 .dim { color: #8b8b98; }
-  p { font-size: 27px; color: #c3c3cc; text-align: center; max-width: 900px; line-height: 1.45; }
-  .pills { display: flex; gap: 12px; margin-top: 8px; }
+  h1 {
+    font: var(--weight-bold) 68px/1 var(--font-display, var(--font-sans));
+    letter-spacing: var(--tracking-display);
+  }
+  h1 .dim { color: var(--text-muted); }
+  p {
+    font-size: 27px; color: var(--text-body); text-align: center;
+    max-width: 900px; line-height: var(--leading-snug);
+  }
+  .pills { display: flex; gap: var(--space-3); margin-top: var(--space-2); }
   .pill {
-    border: 1px solid #2c2c36; border-radius: 999px; padding: 10px 22px;
-    font-size: 20px; color: #c3c3cc;
+    border: var(--border-width) solid var(--border-hairline);
+    border-radius: var(--radius-full); padding: 10px 22px;
+    font-size: 20px; color: var(--text-body);
   }
 </style>
 <img class="mark" src="data:image/png;base64,${png(224).toString("base64")}">
@@ -126,12 +136,20 @@ try {
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
+// Written to a real file inside the site folder and opened with `goto`,
+// rather than handed to `setContent`. `setContent` renders on about:blank,
+// which cannot load a file:// stylesheet — the card came out unstyled, in
+// Times, on white, and looked exactly like a broken build.
+const scratch = resolve(out, ".og-card.html");
 for (const c of CARDS) {
-  await page.setContent(c.html);
-  // No web fonts and the mark is a data URI, so one frame is enough —
-  // waiting on the network here would wait forever.
+  writeFileSync(scratch, c.html);
+  await page.goto(pathToFileURL(scratch).href, { waitUntil: "load" });
+  // The tokens pull the Geist faces from disk; screenshotting before they
+  // arrive captures the fallback font.
+  await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(150);
   await page.screenshot({ path: c.file });
   console.log("card written to", c.file);
 }
+rmSync(scratch, { force: true });
 await browser.close();

@@ -19,6 +19,20 @@
       </div>
       <div class="masthead-right">
         <span class="datel mono" id="tabcount"></span>
+        <!--
+          Rendered signed-out. The worker is asked for the real state right
+          after paint and swaps the icon if it differs — asking first would
+          put a message round-trip on the critical path of a page that opens
+          fifty times a day, to change one glyph.
+        -->
+        <button class="iconbtn" id="account" title="Sign in" aria-label="Sign in">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span class="acct-dot" id="accountdot" hidden></span>
+        </button>
         <button class="iconbtn" id="settings" title="Settings" aria-label="Settings">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -38,7 +52,6 @@
 
     <footer class="footer">
       <span>OpenTabs — your tabs never leave this browser.</span>
-      <span>OpenApps</span>
     </footer>
   </div>
 

@@ -1,38 +1,28 @@
 /*
- * The OpenTabs design language, carried over so a pack looks the same on the
- * site as it will on the page it is going to.
+ * The marketplace, on the shared design system.
  *
- * Tokens first, then the few components. Dark mode follows the system rather
- * than offering a toggle: this page is a stop on the way to somewhere, not a
- * place to set up.
+ * Every colour, size, radius and weight comes from the vendored tokens in
+ * `public/tokens/` — the same ones the product site links. This file used to
+ * declare its own `:root` palette with the same *names* and different
+ * values, which is the worst of both: it looks like the design system and
+ * drifts from it silently.
+ *
+ * The four aliases below exist only because this stylesheet was written
+ * against shorter names. They map onto real tokens; they do not invent
+ * values.
+ *
+ * Dark mode follows the system rather than offering a toggle: this page is a
+ * stop on the way to somewhere, not a place to set up. The tokens handle
+ * both, so there is no media query here at all.
  */
-:root {
-  --bg: #fbfbf9;
-  --bg-sunken: #f0f0ee;
-  --surface-card: #ffffff;
-  --text-strong: #020202;
-  --text-muted: #7c7c7c;
-  --text-faint: #989898;
-  --border-hairline: #deded9;
-  --border-focus: #15b9eb;
-  --success-fg: #00916c;
-  --danger-fg: #c0392b;
-  --warning-fg: #c2661f;
-  --radius: 12px;
-  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-}
+@import url("./tokens/styles.css");
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c0c0d;
-    --bg-sunken: #161618;
-    --surface-card: #131315;
-    --text-strong: #f4f4f2;
-    --text-muted: #a0a0a0;
-    --text-faint: #6f6f72;
-    --border-hairline: #2a2a2e;
-  }
+:root {
+  --app-opentabs: var(--accent-2);
+  --bg: var(--bg-page);
+  --radius: var(--radius-lg);
+  --font: var(--font-sans);
+  --mono: var(--font-mono);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -57,8 +47,28 @@ a { color: inherit; }
 
 /* ---- masthead ---- */
 .masthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
-.brand { font-size: 1.5rem; font-weight: 600; text-decoration: none; letter-spacing: -0.02em; }
-.brand span { color: var(--text-faint); font-weight: 400; }
+/* The family wordmark, the same shape every product in the suite uses: a
+   tinted tile holding the product's own mark, "Open" in muted grey, the
+   product name, then a period in the product's accent. */
+.brand { display: flex; align-items: center; gap: var(--space-2); text-decoration: none; }
+.brand-tile {
+  display: grid; place-items: center; width: 26px; height: 26px;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--app-opentabs) 16%, transparent);
+  color: var(--app-opentabs);
+}
+.brand-tile svg { display: block; }
+.brand-word {
+  font: var(--weight-medium) var(--text-xl)/1 var(--font-display, var(--font-sans));
+  letter-spacing: var(--tracking-display);
+  color: var(--text-strong);
+}
+.brand-word .muted { color: var(--text-muted); }
+.brand-word .dot { color: var(--app-opentabs); }
+.brand-word .sub {
+  color: var(--text-muted); font-weight: var(--weight-regular);
+  margin-left: var(--space-2);
+}
 .tagline { margin: 6px 0 0; color: var(--text-muted); font-size: 0.86rem; max-width: 56ch; }
 
 /* ---- controls ---- */

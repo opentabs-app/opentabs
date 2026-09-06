@@ -82,6 +82,23 @@ button {
 }
 .iconbtn:hover { background: var(--bg-sunken, #f0f0ee); border-color: var(--border-hairline, #deded9); }
 
+/* The account button carries a state dot rather than a second icon: at 16px
+   a "signed in" glyph and a "signed out" glyph are the same smudge, and the
+   dot is legible at a glance without the button changing shape.
+
+   `acct-dot`, not `dot`: this stylesheet already has a `.dot` for status
+   severity, and it sets `display: inline-block`. An author rule beats the
+   user agent's `[hidden] { display: none }`, so reusing the name left the
+   indicator permanently visible — claiming a session nobody had. */
+#account { position: relative; }
+#account .acct-dot {
+  position: absolute; right: 4px; bottom: 4px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--success-fg, #00916c);
+  box-shadow: 0 0 0 2px var(--bg-page, #fbfbf9);
+}
+#account.on { color: var(--text-strong, #020202); }
+
 /* ---- prompt bar (A1) ---- */
 .promptbar { display: flex; gap: 8px; margin: 26px 0 8px; max-width: 900px; }
 .promptbar input {

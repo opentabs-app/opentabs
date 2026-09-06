@@ -67,8 +67,8 @@ export async function signIn(): Promise<string | null> {
     el(
       "p",
       "muted",
-      "One OpenApps account, shared by every app in the suite. It is needed to " +
-        "like a pack — installing one never is.",
+      "One account, shared across the suite. It is needed to like a pack — " +
+        "installing one never is.",
     ),
   );
 
