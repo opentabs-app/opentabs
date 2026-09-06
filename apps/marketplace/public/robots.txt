@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# The pack pages live behind a fragment (#/pack/<id>), which crawlers do not
+# follow, so there is nothing deeper to list here. The product site carries
+# the sitemap.
+Sitemap: https://opentabs.app/sitemap.xml
