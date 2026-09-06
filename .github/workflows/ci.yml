@@ -1,0 +1,79 @@
+# Mirrors opencapture's workflow. Lives at opentabs/.github/workflows/, which
+# only activates if/when opentabs is split into its own repository — GitHub
+# does not pick up a nested .github/workflows from a nested-repo layout.
+name: ci
+
+on:
+  push: { branches: [main] }
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  WASM_BINDGEN_VERSION: "0.2.126"
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - name: wasm builds
+        run: cargo build -p tabs-core --release --target wasm32-unknown-unknown
+
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: wasm32-unknown-unknown }
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      # The wasm-bindgen CLI version must match the crate pin exactly — the
+      # generated glue is schema-versioned, and a mismatch fails with a
+      # message that does not name the real cause.
+      - run: cargo install wasm-bindgen-cli --version ${{ env.WASM_BINDGEN_VERSION }} --locked
+      - working-directory: apps/extension
+        run: npm ci
+      - working-directory: apps/extension
+        run: npm run typecheck
+      - working-directory: apps/extension
+        run: npm run build
+      # Budget assertions run against dist/, so they must follow the build.
+      - working-directory: apps/extension
+        run: npm test
+      - working-directory: apps/extension
+        run: npm run build:firefox
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opentabs-unpacked
+          path: |
+            apps/extension/dist
+            apps/extension/dist-firefox
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: wasm32-unknown-unknown }
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: cargo install wasm-bindgen-cli --version ${{ env.WASM_BINDGEN_VERSION }} --locked
+      - working-directory: apps/extension
+        run: npm ci
+      - working-directory: apps/extension
+        run: npx playwright install --with-deps chromium
+      - working-directory: apps/extension
+        run: npm run build
+      - working-directory: apps/extension
+        run: npm run e2e

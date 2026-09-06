@@ -1,0 +1,162 @@
+.wrap.narrow { max-width: 780px; }
+
+.tabsnav { display: flex; gap: 4px; margin: 26px 0 22px; border-bottom: 1px solid var(--border-hairline, #deded9); }
+.tabsnav button {
+  padding: 8px 13px; font-size: 0.85rem; color: var(--text-muted, #7c7c7c);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tabsnav button.on { color: var(--text-strong, #020202); border-bottom-color: var(--border-focus, #15b9eb); }
+
+.pane { display: none; }
+.pane.on { display: block; }
+
+.hint { font-size: 0.82rem; color: var(--text-muted, #7c7c7c); margin: 0 0 14px; }
+.hint code { font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.92em; }
+.warn {
+  font-size: 0.8rem; color: var(--warning-fg, #c2661f); margin: 0 0 14px;
+  padding: 9px 12px; border: 1px solid currentColor; border-radius: 8px;
+}
+
+.field { margin-bottom: 22px; }
+.field > label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-strong, #020202); margin-bottom: 6px; }
+.field select, .field input[type="text"], .field input:not([type]), .field textarea {
+  width: 100%; font: inherit; font-size: 0.88rem; padding: 8px 10px;
+  border: 1px solid var(--border-hairline, #deded9); border-radius: 8px;
+  background: var(--surface-card, #fff); color: var(--text-strong, #020202);
+}
+.field textarea { font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.78rem; line-height: 1.5; resize: vertical; }
+label.inline { font-size: 0.8rem; color: var(--text-muted, #7c7c7c); display: inline-flex; align-items: center; gap: 6px; }
+
+.btn {
+  font-size: 0.82rem; padding: 7px 12px; border-radius: 8px;
+  border: 1px solid var(--border-hairline, #deded9);
+  background: var(--surface-card, #fff); color: var(--text-strong, #020202);
+}
+.btn:hover { background: var(--bg-sunken, #f0f0ee); }
+.btn.primary { border-color: var(--border-focus, #15b9eb); color: var(--border-focus, #15b9eb); }
+.btn.danger { border-color: var(--danger-fg, #c0392b); color: var(--danger-fg, #c0392b); }
+.row-actions { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+
+.addrow { display: flex; gap: 8px; margin-bottom: 18px; }
+.addrow input { flex: 1; font: inherit; font-size: 0.88rem; padding: 8px 10px; border: 1px solid var(--border-hairline, #deded9); border-radius: 8px; background: var(--surface-card, #fff); color: var(--text-strong, #020202); }
+
+.gitem, .titem, .citem {
+  border: 1px solid var(--border-hairline, #deded9); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 10px; background: var(--surface-card, #fff);
+}
+.gitem-head, .titem-head { display: flex; align-items: center; gap: 10px; }
+.gitem-name { flex: 1; font-size: 0.9rem; color: var(--text-strong, #020202); }
+.gitem-def { font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.68rem; color: var(--text-faint, #989898); }
+.move { font-size: 0.75rem; color: var(--text-faint, #989898); padding: 2px 5px; }
+
+.titem-body { margin-top: 10px; display: none; }
+.titem.open .titem-body { display: block; }
+.srcrow { display: flex; gap: 8px; align-items: center; padding: 5px 0; font-size: 0.8rem; }
+.srcrow .who { flex: 1; font-family: "Geist Mono", ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.srcrow .rm { color: var(--danger-fg, #c0392b); font-size: 0.75rem; }
+
+.preview { border: 1px dashed var(--border-hairline, #deded9); border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; }
+.preview b { display: block; font-size: 0.72rem; color: var(--text-faint, #989898); text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 5px; font-weight: 500; }
+.preview div { color: var(--text-body, #3d3d3d); padding: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.help { margin-top: 16px; font-size: 0.82rem; color: var(--text-muted, #7c7c7c); }
+.help summary { cursor: pointer; }
+.help ul { padding-left: 18px; line-height: 1.7; }
+
+.savebar {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px);
+  background: var(--text-strong, #020202); color: var(--surface-card, #fff);
+  padding: 8px 18px; border-radius: 999px; font-size: 0.8rem;
+  opacity: 0; transition: opacity 160ms, transform 160ms; pointer-events: none;
+}
+.savebar.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Per-group option editors, collapsed until asked for. */
+.gitem .opts { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-hairline, #deded9); }
+.gitem.open .opts { display: block; }
+.gitem .opts .field { margin-bottom: 14px; }
+.gitem .opts .field:last-child { margin-bottom: 0; }
+.preview .btn { display: block; width: 100%; text-align: left; margin-top: 4px; }
+
+/* Diagnostics readout. Dense on purpose — it is scanned, not read. */
+table.diag { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.76rem; }
+table.diag th, table.diag td {
+  text-align: left; padding: 5px 8px;
+  border-bottom: 1px solid var(--border-hairline, #deded9);
+  font-family: "Geist Mono", ui-monospace, monospace;
+}
+table.diag th { color: var(--text-faint, #989898); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+table.diag td:first-child { font-family: inherit; color: var(--text-strong, #020202); }
+
+/* Raw diagnostic output — monospace, scrollable, never wrapped mid-token. */
+pre.probe {
+  margin-top: 10px; max-height: 340px; overflow: auto;
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.72rem;
+  line-height: 1.5; white-space: pre; color: var(--text-body, #3d3d3d);
+  background: var(--bg-sunken, #f0f0ee); border: 1px solid var(--border-hairline, #deded9);
+  border-radius: 8px; padding: 10px 12px;
+}
+pre.probe:empty { display: none; }
+
+/* Arriving from a card's gear: say where you landed.
+ * A page that scrolled somewhere without saying so is indistinguishable from
+ * one that ignored the link. */
+.gitem.flash, .titem.flash, .citem.flash {
+  animation: flashrow 1.6s ease-out;
+}
+@keyframes flashrow {
+  0%, 40% { border-color: var(--border-focus, #15b9eb); background: var(--bg-sunken, #f0f0ee); }
+  100% { border-color: var(--border-hairline, #deded9); background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gitem.flash, .titem.flash, .citem.flash { animation: none; border-color: var(--border-focus, #15b9eb); }
+}
+
+/* Section headings inside an editor — the same grouping X's own advanced
+ * search uses, so a reader can find a field where they expect it to be. */
+.opts .subhead {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-faint, #989898);
+  margin: 20px 0 12px; padding-top: 12px;
+  border-top: 1px solid var(--border-hairline, #deded9);
+}
+
+/* ---- marketplace pane ---- */
+.controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.sortnav { display: flex; gap: 2px; background: var(--bg-sunken, #f0f0ee); padding: 3px; border-radius: 9px; }
+.sortnav button {
+  padding: 4px 12px; border-radius: 7px; font-size: 0.8rem; color: var(--text-muted, #7c7c7c);
+  background: none; border: none; cursor: pointer;
+}
+.sortnav button.on { background: var(--surface-card, #fff); color: var(--text-strong, #020202); }
+#marketsearch { flex: 1; min-width: 180px; }
+
+.tagrow { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.tag {
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.66rem;
+  padding: 3px 8px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border-hairline, #deded9); color: var(--text-muted, #7c7c7c);
+  background: transparent;
+}
+.tag:hover { border-color: var(--border-focus, #15b9eb); }
+.tag.on { background: var(--text-strong, #020202); color: var(--surface-card, #fff); border-color: var(--text-strong, #020202); }
+
+.contents-list { margin: 8px 0 10px; padding-left: 18px; font-size: 0.82rem; color: var(--text-muted, #7c7c7c); }
+.contents-list li { margin-bottom: 3px; }
+
+/* The share dialog. Modal because publishing is a deliberate act and the rest
+ * of the page is not relevant while it is being composed. */
+.modal { position: fixed; inset: 0; background: rgb(0 0 0 / 0.42); display: grid; place-items: center; padding: 20px; z-index: 60; }
+.modal-box {
+  background: var(--surface-card, #fff); border: 1px solid var(--border-hairline, #deded9);
+  border-radius: 12px; padding: 22px; max-width: 480px; width: 100%;
+  max-height: 86vh; overflow-y: auto;
+}
+.modal-box h3 { margin: 0 0 8px; font-size: 1.02rem; }
+.modal-box input, .modal-box textarea {
+  width: 100%; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--border-hairline, #deded9); background: var(--bg-sunken, #f0f0ee);
+  font: inherit; font-size: 0.85rem; color: var(--text-strong, #020202);
+}
+.modal-box .field { margin: 14px 0; }

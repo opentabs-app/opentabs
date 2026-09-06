@@ -1,0 +1,14 @@
+[package]
+name = "tabs-feedgen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Writes the two static files OpenTabs serves: app catalogue and GitHub trending."
+
+[dependencies]
+tabs-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+ureq = { workspace = true }
+anyhow = { workspace = true }

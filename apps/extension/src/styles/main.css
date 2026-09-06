@@ -1,0 +1,501 @@
+/* OpenTabs — built on the OpenApps design system.
+ *
+ * Only semantic tokens are referenced (--surface-*, --text-*, --border-*).
+ * Reaching past them into the brand palette is what stops the system being
+ * re-skinnable, so it never happens here.
+ *
+ * Fonts are self-hosted: MV3 blocks remote font loads, so a CDN face would
+ * silently fall back to a system stack in the one place we most control.
+ */
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/radius.css";
+@import "./tokens/elevation.css";
+@import "./tokens/motion.css";
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg-page, #f2f2f2);
+  color: var(--text-body, #3d3d3d);
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars.
+ *
+ * Standard properties only, deliberately. Defining any `::-webkit-scrollbar`
+ * rule opts Chrome out of overlay scrollbars entirely — you get a classic bar
+ * that permanently occupies layout width, which is worse than the default it
+ * was meant to fix. `scrollbar-color` themes the overlay bar instead, and it
+ * works in Firefox too.
+ *
+ * The thumb is derived from a text token via color-mix so it follows the
+ * theme rather than becoming a second palette, and it is translucent so it
+ * sits on the card rather than on top of it.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--text-faint, #989898) 38%, transparent) transparent;
+}
+
+.mono, .num {
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+a { color: inherit; text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 2px; }
+:focus-visible {
+  outline: 2px solid var(--border-focus, #15b9eb);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button {
+  font: inherit; color: inherit; cursor: pointer;
+  background: none; border: none; padding: 0;
+}
+
+/* Full width. A dashboard that leaves two empty columns on a wide monitor is
+ * wasting the one advantage a new tab page has over a popup. The cap is only
+ * there so an ultrawide does not stretch a row of cards to absurdity. */
+.wrap { max-width: min(2400px, 100%); margin: 0 auto; padding: 40px clamp(20px, 3vw, 56px) 64px; }
+
+/* ---- masthead ---- */
+.masthead { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.greeting { font-size: clamp(1.6rem, 3.5vw, 2.1rem); font-weight: 500; letter-spacing: -0.02em; color: var(--text-strong, #020202); margin: 0; }
+.datel { color: var(--text-muted, #7c7c7c); font-size: 0.85rem; margin-top: 2px; }
+.masthead-right { display: flex; align-items: center; gap: 10px; }
+.iconbtn {
+  width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center;
+  color: var(--text-muted, #7c7c7c);
+  border: 1px solid transparent;
+}
+.iconbtn:hover { background: var(--bg-sunken, #f0f0ee); border-color: var(--border-hairline, #deded9); }
+
+/* ---- prompt bar (A1) ---- */
+.promptbar { display: flex; gap: 8px; margin: 26px 0 8px; max-width: 900px; }
+.promptbar input {
+  flex: 1; font: inherit; padding: 11px 14px;
+  border-radius: 10px; border: 1px solid var(--border-hairline, #deded9);
+  background: var(--surface-card, #fff); color: var(--text-strong, #020202);
+}
+.promptbar input::placeholder { color: var(--text-faint, #989898); }
+.promptbar .assistant {
+  padding: 0 12px; border-radius: 10px; font-size: 0.8rem;
+  border: 1px solid var(--border-hairline, #deded9);
+  background: var(--surface-card, #fff); color: var(--text-muted, #7c7c7c);
+}
+
+/* ---- grid ---- */
+/* Masonry packing on a real grid.
+ *
+ * A plain grid makes every row as tall as its tallest card, so a short card
+ * like CRYPTO leaves dead space beneath it that nothing can occupy. CSS
+ * `grid-template-rows: masonry` would solve this but is not shipping in
+ * Chrome, and multi-column layout breaks column spans and DOM order.
+ *
+ * So: fine-grained implicit rows, no row gap, and each card is given a
+ * `grid-row: span N` matching its measured height (see layout.ts). Cards then
+ * stack tightly, column spans still work, and DOM order still drives the
+ * reordering drag. The 16px separation comes from the card's own margin
+ * rather than the grid gap, so the span arithmetic stays simple.
+ */
+.grid {
+  margin-top: 22px;
+  display: grid;
+  column-gap: 16px;
+  row-gap: 0;
+  grid-auto-rows: 8px;
+  /* auto-fit, not auto-fill: with few cards the tracks expand to fill the row
+   * instead of leaving empty columns on the right. */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: start;
+}
+.grid > .card { margin-bottom: 16px; }
+
+/* Before the first measure, cards flow at natural height. */
+.grid > .card:not([style*="grid-row"]) { grid-row: span 30; }
+.card {
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--border-hairline, #deded9);
+  border-radius: 12px; padding: 16px 18px 18px;
+}
+.card.wide { grid-column: 1 / -1; }
+
+/* ---- user layout: span, collapse, drag ---- */
+.card[data-span="2"] { grid-column: span 2; }
+.card[data-span="3"] { grid-column: span 3; }
+.card[data-span="full"] { grid-column: 1 / -1; }
+.card.collapsed .card-body { display: none; }
+.card.collapsed { padding-bottom: 14px; }
+
+.card.dragging { opacity: 0.4; }
+.card.dropbefore { box-shadow: -3px 0 0 var(--border-focus, #15b9eb); }
+.card.dropafter { box-shadow: 3px 0 0 var(--border-focus, #15b9eb); }
+
+.grip {
+  cursor: grab; color: var(--text-faint, #989898); opacity: 0;
+  transition: opacity 120ms; line-height: 1; padding: 0 2px;
+}
+.card:hover .grip { opacity: 1; }
+.grip:active { cursor: grabbing; }
+
+.cardctl { display: flex; gap: 2px; opacity: 0; transition: opacity 120ms; }
+.card:hover .cardctl, .card.collapsed .cardctl { opacity: 1; }
+.cardctl button {
+  width: 20px; height: 20px; border-radius: 5px; font-size: 0.72rem;
+  color: var(--text-faint, #989898); display: grid; place-items: center;
+}
+.cardctl button:hover { background: var(--bg-sunken, #f0f0ee); color: var(--text-strong, #020202); }
+.cardctl .gear svg { display: block; }
+
+/* Drag the right edge to change how many columns a card spans. */
+.resizer {
+  position: absolute; top: 0; right: -5px; width: 10px; height: 100%;
+  cursor: col-resize; opacity: 0;
+}
+/* Bottom edge: height. Corner: both at once. */
+.resizer-y {
+  position: absolute; left: 0; bottom: -8px; height: 10px; width: 100%;
+  cursor: row-resize; opacity: 0;
+}
+.resizer-xy {
+  position: absolute; right: -5px; bottom: -8px; width: 14px; height: 14px;
+  cursor: nwse-resize; opacity: 0;
+}
+.card:hover .resizer-y, .card:hover .resizer-xy { opacity: 1; }
+.resizer-y::after {
+  content: ""; position: absolute; left: 30%; right: 30%; top: 4px;
+  height: 2px; border-radius: 2px; background: var(--border-hairline, #deded9);
+}
+.resizer-y:hover::after, .resizer-xy:hover::after { background: var(--border-focus, #15b9eb); }
+.resizer-xy::after {
+  content: ""; position: absolute; right: 4px; bottom: 5px;
+  width: 6px; height: 6px; border-right: 2px solid var(--border-hairline, #deded9);
+  border-bottom: 2px solid var(--border-hairline, #deded9);
+}
+
+/* A card with a user-set height scrolls its own body rather than growing. */
+.card.fixedheight { display: flex; flex-direction: column; }
+.card.fixedheight .card-body { flex: 1; overflow-y: auto; min-height: 0; }
+.card { position: relative; }
+.card:hover .resizer { opacity: 1; }
+.resizer::after {
+  content: ""; position: absolute; top: 20%; bottom: 20%; left: 4px;
+  width: 2px; border-radius: 2px; background: var(--border-hairline, #deded9);
+}
+.resizer:hover::after { background: var(--border-focus, #15b9eb); }
+/* No hardcoded span for the tabs card any more: its width is a user setting
+ * with a sensible default, and a media query would silently override it. */
+
+.card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.card-title {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.11em;
+  color: var(--text-muted, #7c7c7c); font-weight: 500;
+  font-family: "Geist Mono", ui-monospace, monospace;
+}
+.card-head .rule { flex: 1; height: 1px; background: var(--border-hairline, #deded9); }
+/* A group's mark, left of its title. Sized to the cap height of the title and
+ * given the same muted tone, so it identifies the source without competing
+ * with it. The negative margin pulls it inside the head's 10px gap — beside
+ * the word it belongs to, not floating between the grip and the title. */
+.card-icon {
+  width: 11px; height: 11px; flex: none; margin-right: -3px;
+  color: var(--text-muted, #7c7c7c);
+}
+.card-count { font-size: 0.72rem; color: var(--text-faint, #989898); }
+
+/* ---- lists ---- */
+.rows { display: flex; flex-direction: column; }
+.row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid var(--border-hairline, #deded9);
+}
+.rows .row:last-child { border-bottom: none; }
+.row-main { flex: 1; min-width: 0; }
+/* Headlines wrap. A truncated headline is often exactly the half that says
+ * what happened, and the reader cannot recover it without leaving the page. */
+.row-title {
+  display: block; color: var(--text-strong, #020202); font-size: 0.9rem;
+  overflow-wrap: anywhere; text-wrap: pretty;
+}
+.row { align-items: flex-start; }
+.row-meta { padding-top: 1px; }
+.row-meta { font-size: 0.74rem; color: var(--text-faint, #989898); white-space: nowrap; }
+.row-sub { font-size: 0.76rem; color: var(--text-faint, #989898); margin-top: 1px; }
+
+.corrob {
+  font-size: 0.68rem; padding: 1px 5px; border-radius: 4px;
+  border: 1px solid var(--border-hairline, #deded9); color: var(--text-muted, #7c7c7c);
+  font-family: "Geist Mono", ui-monospace, monospace;
+}
+
+/* ---- tabs group ---- */
+/* Multi-column rather than grid.
+ *
+ * A grid makes every row as tall as its tallest group, so one site with a
+ * two-line title left a band of dead space across the whole row. These boxes
+ * need no column spans and read fine in column order, so columns pack them
+ * far tighter than a grid can.
+ */
+.tabgroups { columns: 230px auto; column-gap: 12px; }
+.tabgroup {
+  border: 1px solid var(--border-hairline, #deded9); border-radius: 10px;
+  padding: 9px 11px;
+  /* Never split a site's tabs across a column boundary. */
+  break-inside: avoid; -webkit-column-break-inside: avoid;
+  margin-bottom: 10px;
+}
+.tabgroup-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.tabgroup-name { font-size: 0.8rem; font-weight: 500; color: var(--text-strong, #020202); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabgroup-n { font-size: 0.7rem; color: var(--text-faint, #989898); }
+.tabgroup .closeall { margin-left: auto; font-size: 0.7rem; color: var(--text-faint, #989898); opacity: 0; transition: opacity 120ms; }
+.tabgroup:hover .closeall { opacity: 1; }
+.tablink { display: flex; align-items: flex-start; gap: 7px; padding: 2px 0; font-size: 0.82rem; line-height: 1.35; }
+.tablink img { width: 14px; height: 14px; flex: none; border-radius: 3px; margin-top: 2px; }
+.tablink span {
+  /* Two lines, then clamp. A tab list is dense enough that unbounded wrapping
+   * would push the rest of the page down, but one truncated line is often
+   * unidentifiable. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere;
+}
+.tablink .x { margin-left: auto; opacity: 0; color: var(--text-faint, #989898); flex: none; }
+.tablink:hover .x { opacity: 1; }
+/* In the card head now, so it wears the head's scale and the warning colour
+ * that says "this closes tabs" rather than looking like another link. */
+.card-head .dupe {
+  font-size: 0.68rem; flex: none;
+  color: var(--warning-fg, #c2661f); border-color: var(--warning-fg, #c2661f);
+}
+
+/* ---- tickers ---- */
+/*
+ * Packed tighter than the other grids on purpose. A ticker is three short
+ * lines — symbol, price, change — and the widest of them is about 60px in the
+ * tabular face. At a 96px minimum a card wide enough for six showed four, and
+ * the rest of each column was empty. The row gap stays generous: columns are
+ * told apart by the gap, rows by the baseline, so only the horizontal one
+ * needed to give.
+ */
+.tickers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  column-gap: 10px; row-gap: 14px;
+}
+/* Numbers must never wrap mid-value or push the grid wider than its card. */
+.ticker { min-width: 0; }
+.ticker .sym, .ticker .px, .ticker .row-meta {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ticker .sym { font-size: 0.7rem; color: var(--text-faint, #989898); }
+/* The price is the widest of the three lines and so sets the column: a
+ * six-figure crypto price measured 64px at 0.95rem, which was two pixels
+ * over the width that fits five columns. */
+.ticker .px { font-size: 0.9rem; color: var(--text-strong, #020202); }
+.up { color: var(--success-fg, #00916c); }
+.down { color: var(--danger-fg, #c0392b); }
+
+/* ---- weather ---- */
+.wx { display: flex; align-items: center; gap: 14px; }
+.wx .temp { font-size: 2rem; color: var(--text-strong, #020202); line-height: 1; }
+.wx .glyph { font-size: 1.9rem; line-height: 1; }
+.wx .place { font-size: 0.8rem; color: var(--text-muted, #7c7c7c); }
+
+/* ---- apps ---- */
+.apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.app {
+  border: 1px solid var(--border-hairline, #deded9); border-radius: 10px;
+  padding: 11px 12px; display: block;
+}
+.app:hover { background: var(--bg-sunken, #f0f0ee); text-decoration: none; }
+.app .n { font-size: 0.86rem; color: var(--text-strong, #020202); }
+.app .t { font-size: 0.72rem; color: var(--text-faint, #989898); margin-top: 2px; }
+
+/* ---- focus / scratch / todos ---- */
+.scratch {
+  width: 100%; font: inherit; border: none; background: transparent;
+  color: var(--text-strong, #020202); resize: vertical;
+}
+.scratch { min-height: 96px; font-size: 0.88rem; line-height: 1.55; }
+.scratch:focus { outline: none; }
+
+.todo { display: flex; align-items: baseline; gap: 9px; padding: 6px 0; border-bottom: 1px solid var(--border-hairline, #deded9); }
+.todo:last-of-type { border-bottom: none; }
+.todo input[type="checkbox"] { margin: 0; flex: none; }
+.todo .t { flex: 1; font-size: 0.88rem; color: var(--text-strong, #020202); }
+.todo.done .t { text-decoration: line-through; color: var(--text-faint, #989898); }
+.todo .due { font-size: 0.72rem; color: var(--text-faint, #989898); }
+.todo .due.over { color: var(--danger-fg, #c0392b); }
+/*
+ * `color` is not optional here, and its absence was a real bug: an <input>
+ * does not inherit colour, so with none set it falls back to the user agent's
+ * black whatever the theme says. It looked fine in light and was near enough
+ * invisible typing into a dark card.
+ */
+.newtodo {
+  width: 100%; font: inherit; font-size: 0.88rem; padding: 7px 0;
+  border: none; background: transparent; color: var(--text-strong, #020202);
+}
+.newtodo:focus { outline: none; }
+.newtodo::placeholder { color: var(--text-faint, #989898); }
+
+/* A focus item is editable in place, so it must not look like a text field
+ * until you are in it — the card is a list, not a form. */
+.todo .t[contenteditable] { outline: none; border-radius: 4px; padding: 0 3px; margin-left: -3px; }
+.todo .t[contenteditable]:focus { background: var(--bg-sunken, #f0f0ee); }
+/* Remove appears on hover, like the tab rows: always-visible destructive
+ * controls invite the accident they enable. */
+.todo .x {
+  opacity: 0; flex: none; font-size: 0.72rem; color: var(--text-faint, #989898);
+  padding: 0 2px; line-height: 1;
+}
+.todo:hover .x, .todo .x:focus-visible { opacity: 1; }
+.todo .x:hover { color: var(--danger-fg, #c0392b); }
+
+/* ---- status ---- */
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
+.dot.none { background: var(--success-fg, #00916c); }
+.dot.minor { background: var(--warning-fg, #c2661f); }
+.dot.major, .dot.critical { background: var(--danger-fg, #c0392b); }
+.dot.unknown { background: var(--text-faint, #989898); }
+
+/* ---- calendar ---- */
+/* A day heading, so a week of events is readable at a glance. */
+.daysep {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-faint, #989898); font-weight: 500;
+  margin: 10px 0 2px; padding-top: 6px;
+  border-top: 1px solid var(--border-hairline, #deded9);
+}
+.card-body > .daysep:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.ev { display: flex; gap: 18px; padding: 6px 0; border-bottom: 1px solid var(--border-hairline, #deded9); }
+.ev:last-child { border-bottom: none; }
+.ev .when {
+  font-size: 0.74rem; color: var(--text-muted, #7c7c7c);
+  /* Wide enough for "all day" in the mono face, which is the longest thing
+   * this column holds — at 54px it ran straight into the event title.
+   *
+   * The separation is the flex `gap`, not padding inside this box: under
+   * border-box, padding here only narrows the text and leaves the gap where
+   * it was, which is why "all day" still sat hard against its title. */
+  width: 62px; flex: none; white-space: nowrap;
+}
+.ev .what { flex: 1; font-size: 0.86rem; color: var(--text-strong, #020202); }
+.ev .join {
+  font-size: 0.7rem; padding: 1px 7px; border-radius: 5px;
+  border: 1px solid var(--border-focus, #15b9eb); color: var(--border-focus, #15b9eb);
+}
+
+.empty { font-size: 0.82rem; color: var(--text-faint, #989898); padding: 4px 0; }
+.footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border-hairline, #deded9); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 0.75rem; color: var(--text-faint, #989898); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* An X post is prose, not a headline: two lines, then clamp. */
+.row-title.xpost {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; font-size: 0.85rem; line-height: 1.45;
+}
+
+/* Which calendar an event came from, when several are subscribed. */
+.calname {
+  margin-left: 7px; font-size: 0.66rem; color: var(--text-faint, #989898);
+  font-family: "Geist Mono", ui-monospace, monospace;
+}
+
+/* "all day" is a label, not a time — set it apart so a column of clock times
+ * does not read as though one of them is malformed. */
+.ev .when.allday { font-size: 0.68rem; letter-spacing: 0.02em; opacity: 0.8; }
+
+/* Save a tab without leaving the page. Hidden until the row is hovered, like
+ * the close control — but a saved one stays visible, because that is state
+ * rather than an action. */
+.tablink .bm {
+  opacity: 0; flex: none; color: var(--text-faint, #989898);
+  display: grid; place-items: center; padding: 0 2px; margin-left: auto;
+}
+.tablink .bm svg { display: block; }
+.tablink:hover .bm, .tablink .bm:focus-visible { opacity: 1; }
+.tablink .bm:hover { color: var(--text-strong, #020202); }
+.tablink[data-saved="1"] .bm { opacity: 1; color: var(--border-focus, #15b9eb); }
+/* The close control keeps the far right; with two controls the bookmark is
+ * what pushes, so `margin-left:auto` moves there. */
+.tablink .x { margin-left: 4px; }
+
+/* ---- focus: tasks and their steps ---- */
+/* One level of indent, marked by a rule rather than whitespace alone: at this
+ * type size an indent on its own is ambiguous about where a group ends. */
+.todo.step {
+  margin-left: 9px; padding-left: 12px; border-bottom: none;
+  border-left: 1px solid var(--border-hairline, #deded9);
+}
+.todo.step .t { font-size: 0.82rem; color: var(--text-muted, #7c7c7c); }
+.todo.step.done .t { color: var(--text-faint, #989898); }
+/* The "add a step" line is a prompt, not an item: no checkbox, and no space
+ * at all until the task it belongs to is hovered.
+ *
+ * `display: none` rather than `opacity: 0` on purpose — a transparent row
+ * still occupies its line, so with several tasks the card was mostly gaps.
+ * Scoped to `.task:hover`, so hovering the card does not open every one. */
+.todo.addstep { display: none; padding: 0 0 4px; }
+.task:hover .todo.addstep, .task:focus-within .todo.addstep { display: flex; }
+.todo.addstep .newtodo { font-size: 0.8rem; padding: 3px 0; }
+/* A task's step count, so its shape is legible without reading the steps. */
+/* The step count doubles as the fold control, so it needs to read as
+ * pressable without becoming another button competing with the row. */
+.prog {
+  font-size: 0.68rem; color: var(--text-faint, #989898); flex: none;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 1px 4px; border-radius: 4px; cursor: pointer;
+}
+.prog:hover { background: var(--bg-sunken, #f0f0ee); color: var(--text-strong, #020202); }
+.prog.all { color: var(--success-fg, #00916c); }
+.prog .caret { font-size: 0.6rem; line-height: 1; }
+
+/* Folded: the steps and their input go, and the count stays as the summary.
+ * The hover rule that opens "add a step" must not win here, hence the more
+ * specific selector rather than an `!important`. */
+.task.collapsed .todo.step,
+.task.collapsed:hover .todo.addstep,
+.task.collapsed:focus-within .todo.addstep { display: none; }
+
+/* Reordering tasks. The grip is the only place a drag starts, as on cards:
+ * a task row holds a checkbox, an editable sentence and two buttons, and a
+ * whole-row drag would fight all four. */
+.taskgrip {
+  flex: none; cursor: grab; color: var(--text-faint, #989898);
+  font-size: 0.8rem; line-height: 1; opacity: 0; padding-right: 2px;
+  margin-left: -8px;
+}
+.task:hover .taskgrip { opacity: 1; }
+.taskgrip:active { cursor: grabbing; }
+.task.dragging { opacity: 0.45; }
+.task.dropbefore { box-shadow: 0 -2px 0 var(--border-focus, #15b9eb); }
+/* The one position a drag otherwise cannot reach: the end of the list. */
+.taskend { height: 14px; }
+.taskend.dropbefore { box-shadow: 0 -2px 0 var(--border-focus, #15b9eb); }
+
+/* "Saved to Reading — move?" — anchored to the mark, on the body rather than
+ * inside the row, because the row's ancestors clip. */
+.bmpop {
+  position: absolute; z-index: 40; width: 210px;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--border-hairline, #deded9); border-radius: 9px;
+  padding: 9px 10px; display: flex; flex-direction: column; gap: 7px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.14);
+}
+.bmpop-t { font-size: 0.75rem; color: var(--text-muted, #7c7c7c); }
+.bmpop select { width: 100%; font-size: 0.78rem; }

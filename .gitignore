@@ -1,0 +1,27 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Build output. The extension bundles are built by `npm run build` and the
+# marketplace by Vite; shipping them in the repository means a reviewer
+# cannot tell source from artefact.
+apps/extension/dist/
+apps/extension/dist-firefox/
+apps/marketplace/dist/
+apps/extension/test-results/
+apps/extension/playwright-report/
+
+# Generated wasm glue. Produced by `npm run build:wasm` from crates/tabs-core.
+apps/extension/src/wasm-gen/
+
+# Secrets. The `.example` beside each of these is committed; the real one
+# never is.
+deploy/*.env
+!deploy/*.env.example
+
+# macOS
+.DS_Store

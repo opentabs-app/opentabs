@@ -1,0 +1,12 @@
+[package]
+name = "tabs-market"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Marketplace domain: listings, trending, and likes that store no preferences."
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }

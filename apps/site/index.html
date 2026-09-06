@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenTabs — your open tabs, grouped, on every new tab</title>
+<meta name="description" content="A new tab page that shows the tabs you already have open, grouped by site and closable, above a briefing you choose. Paints in 4 KB with no network request. Free, no account, open source." />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="theme-color" content="#101014" />
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="canonical" href="https://opentabs.app/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="OpenTabs" />
+<meta property="og:title" content="OpenTabs — your open tabs, grouped, on every new tab" />
+<meta property="og:description" content="The tabs you already have open, grouped by site and closable, above a briefing you choose. No account, no tracking." />
+<meta property="og:url" content="https://opentabs.app/" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="OpenTabs — your open tabs, grouped, on every new tab" />
+<meta name="twitter:description" content="The tabs you already have open, grouped by site and closable, above a briefing you choose. No account, no tracking." />
+
+<!-- Structured data describing what is already on the page, not extra
+     hidden claims. The FAQ block is the one answer engines quote, so each
+     answer is written to stand alone out of context and to lead with the
+     differentiating fact. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "OpenTabs",
+  "applicationCategory": "BrowserApplication",
+  "operatingSystem": "Chrome 121+, Edge, Firefox",
+  "url": "https://opentabs.app/",
+  "description": "A browser extension that replaces the new tab page with your actual open tabs, grouped by site and closable, above a briefing you choose: markets, weather, news topics, repositories, calendar and a to-do list. Everything runs on your own machine. No account, no tracking, no server holding your settings.",
+  "license": "https://opensource.org/licenses/MIT",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does OpenTabs need an account?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. OpenTabs works completely without one, and your settings live in your own browser profile rather than on a server. An OpenApps account is optional and is only used to publish a pack to the marketplace or to like one — never to store your configuration." }
+    },
+    {
+      "@type": "Question",
+      "name": "What does OpenTabs send anywhere?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Only the requests needed to fill the groups you turned on — a weather API if you added weather, a news feed if you added that topic. There is no analytics, no telemetry and no account behind it. A group you did not enable makes no request at all, and the extension asks for a site's permission the first time it needs it rather than at install." }
+    },
+    {
+      "@type": "Question",
+      "name": "How fast is the new tab page?",
+      "acceptedAnswer": { "@type": "Answer", "text": "It ships about 4 KB gzipped, loads no WebAssembly and makes no network request when it opens. All fetching, parsing and ranking happens in the background service worker beforehand, so opening a tab is a single read from local storage followed by a paint." }
+    },
+    {
+      "@type": "Question",
+      "name": "Which browsers does OpenTabs support?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Chrome 121 or later, Edge, and Firefox. Chrome 121 is the floor because that is the version that reports when each tab was last used, which is what lets OpenTabs sort and close stale tabs correctly." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is OpenTabs open source?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes, under the MIT licence. The grouping, ranking and parsing are a Rust library compiled to WebAssembly, and the whole extension is vanilla TypeScript with no framework." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #101014;
+    --sunken: #17171d;
+    --card: #1b1b22;
+    --line: #2c2c36;
+    --strong: #f4f4f6;
+    --body: #c3c3cc;
+    --muted: #8b8b98;
+    --accent: #7aa2f7;
+    --radius: 12px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--body);
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 22px; }
+  a { color: var(--accent); }
+
+  header.site { padding: 26px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { font-weight: 650; color: var(--strong); text-decoration: none; font-size: 1.05rem; letter-spacing: -0.01em; }
+  header.site nav { display: flex; gap: 18px; font-size: 0.9rem; }
+  header.site nav a { color: var(--muted); text-decoration: none; }
+  header.site nav a:hover { color: var(--strong); }
+
+  .hero { padding: 44px 0 30px; }
+  h1 { font-size: clamp(2rem, 5.2vw, 2.9rem); line-height: 1.12; letter-spacing: -0.025em; color: var(--strong); margin: 0 0 16px; }
+  .lede { font-size: 1.12rem; max-width: 58ch; margin: 0 0 26px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn {
+    display: inline-block; padding: 11px 18px; border-radius: 9px;
+    border: 1px solid var(--line); background: var(--card); color: var(--strong);
+    text-decoration: none; font-size: 0.94rem; font-weight: 550;
+  }
+  .btn.primary { background: var(--strong); color: var(--bg); border-color: var(--strong); }
+  .btn:hover { border-color: var(--muted); }
+  .cta small { color: var(--muted); font-size: 0.85rem; }
+
+  section { padding: 34px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 1.3rem; color: var(--strong); margin: 0 0 6px; letter-spacing: -0.015em; }
+  h2 + p.sub { color: var(--muted); margin: 0 0 22px; max-width: 62ch; }
+  h3 { font-size: 1rem; color: var(--strong); margin: 0 0 6px; }
+
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+  .card p { margin: 0; font-size: 0.92rem; color: var(--body); }
+
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  ol.steps li { counter-increment: s; padding-left: 40px; position: relative; font-size: 0.95rem; }
+  ol.steps li::before {
+    content: counter(s); position: absolute; left: 0; top: 1px;
+    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--sunken); border: 1px solid var(--line); color: var(--muted);
+    font-size: 0.78rem; font-variant-numeric: tabular-nums;
+  }
+  ol.steps strong { color: var(--strong); font-weight: 600; }
+
+  dl.faq { margin: 0; }
+  dl.faq dt { color: var(--strong); font-weight: 600; margin: 20px 0 4px; }
+  dl.faq dt:first-child { margin-top: 0; }
+  dl.faq dd { margin: 0; font-size: 0.95rem; }
+
+  pre {
+    background: var(--sunken); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: 0.82rem;
+    color: var(--body); margin: 0;
+  }
+
+  footer.site { border-top: 1px solid var(--line); padding: 26px 0 44px; color: var(--muted); font-size: 0.88rem; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+  footer.site a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">OpenTabs</a>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="https://market.opentabs.app">Packs</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/opentabs-app/OpenTabs">Source</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h1>Your open tabs, grouped, on every new tab.</h1>
+    <p class="lede">
+      Most new tab pages show you a grid of links you already have bookmarked. OpenTabs
+      shows you the twenty-six tabs you actually have open — grouped by site, sorted by
+      what you touched last, closable from the page — above a briefing you assemble
+      yourself.
+    </p>
+    <div class="cta">
+      <a class="btn primary" href="#install">Install</a>
+      <a class="btn" href="https://market.opentabs.app">Browse packs</a>
+      <small>Free. No account. MIT-licensed.</small>
+    </div>
+  </div>
+
+  <section id="how">
+    <h2>It paints before you perceive it</h2>
+    <p class="sub">
+      A new tab opens thirty to a hundred times a day. Anything that makes it hesitate is
+      felt every one of those times, so nothing interesting is allowed on the critical path.
+    </p>
+    <pre>chrome.alarms ─► service worker ─► fetch → rank (Rust/wasm)
+                                        │
+                               render-ready JSON
+                                        │
+                                        ▼
+                                chrome.storage.local
+                                        │
+          new tab opens ─────────────►  read once, paint. done.</pre>
+    <p style="margin-top:14px; font-size:0.93rem;">
+      All the work happens where nobody is waiting. The page itself ships about
+      <strong style="color:var(--strong)">4&nbsp;KB gzipped</strong>, loads no WebAssembly,
+      and makes no network request when it opens — a budget the test suite enforces, so it
+      stays true as the product grows.
+    </p>
+  </section>
+
+  <section>
+    <h2>What goes above the tabs is yours</h2>
+    <p class="sub">Every group is optional, reorderable, and off until you turn it on.</p>
+    <div class="grid">
+      <div class="card"><h3>Topics</h3><p>Any subject you can name, from RSS, Hacker News, arXiv, Reddit or an X search — deduplicated across sources and ranked, not concatenated.</p></div>
+      <div class="card"><h3>Markets</h3><p>Crypto and equities, at the interval you choose.</p></div>
+      <div class="card"><h3>Weather</h3><p>From coordinates you set. No location permission, no IP lookup.</p></div>
+      <div class="card"><h3>Focus</h3><p>A to-do list with sub-tasks, reordering, and items that clear themselves six hours after you tick them.</p></div>
+      <div class="card"><h3>Calendar</h3><p>A read-only ICS address. Real recurrence handling, not a naive expansion.</p></div>
+      <div class="card"><h3>Tabs management</h3><p>Grouped by site, duplicates closable in one press, stale New Tab pages closed on a schedule you set.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Nothing about you is stored anywhere but your browser</h2>
+    <p class="sub">Not a policy — an architecture, and one that can be checked.</p>
+    <div class="grid">
+      <div class="card"><h3>No account to use it</h3><p>Your configuration lives in your own browser profile. There is no server holding it, so there is no server to breach, subpoena or shut down.</p></div>
+      <div class="card"><h3>Permissions asked when needed</h3><p>A group you never enable never asks for a site, and never makes a request. The install prompt is not where you agree to everything up front.</p></div>
+      <div class="card"><h3>Anonymous by construction</h3><p>Signing in — optional, and only to publish or like a pack — stores a one-way digest. The marketplace database has no column that could answer "what has this account liked".</p></div>
+    </div>
+  </section>
+
+  <section id="install">
+    <h2>Install</h2>
+    <p class="sub">Chrome 121 or later, Edge, or Firefox.</p>
+    <ol class="steps">
+      <li><strong>Get the extension</strong> from the Chrome Web Store, the Edge Add-ons site or Firefox Add-ons — or build it from source, which is four commands.</li>
+      <li><strong>Open a new tab.</strong> Your open tabs are already grouped. That part needs no configuration at all.</li>
+      <li><strong>Add what you want above them</strong> in Settings — or install a ready-made pack from <a href="https://market.opentabs.app">the marketplace</a> and start from someone else's hour of work.</li>
+    </ol>
+  </section>
+
+  <section id="faq">
+    <h2>Questions</h2>
+    <dl class="faq">
+      <dt>Does it need an account?</dt>
+      <dd>No. OpenTabs works completely without one and your settings never leave your browser profile. An OpenApps account is optional and buys exactly two things: publishing a pack to the marketplace, and liking one.</dd>
+
+      <dt>What does it send anywhere?</dt>
+      <dd>Only the requests needed to fill the groups you turned on. There is no analytics and no telemetry. A group you did not enable makes no request at all.</dd>
+
+      <dt>Why does it want Chrome 121?</dt>
+      <dd>That is the version that reports when each tab was last used. Without it, "sort by what you touched last" and "close the New Tab pages you abandoned" both become guesses.</dd>
+
+      <dt>What is a pack?</dt>
+      <dd>One group's configuration — its sources, its query, its layout — as a document you can hand to someone. Your API keys, calendar addresses and coordinates are stripped out before it leaves your browser. You can publish one to the marketplace or just send the file to a colleague; the second needs no account.</dd>
+
+      <dt>Is it open source?</dt>
+      <dd>Yes, MIT. The grouping, ranking, parsing and date handling are a Rust library compiled to WebAssembly; the extension itself is vanilla TypeScript with no framework.</dd>
+    </dl>
+  </section>
+
+  <footer class="site">
+    <span>OpenTabs — part of <a href="https://openapps.network">OpenApps</a>.</span>
+    <span>
+      <a href="https://market.opentabs.app">Packs</a> ·
+      <a href="https://github.com/opentabs-app/OpenTabs">Source</a> ·
+      <a href="/privacy.html">Privacy</a>
+    </span>
+  </footer>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy — OpenTabs</title>
+<meta name="description" content="What OpenTabs stores, what it sends, and what the marketplace database is structurally unable to answer." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="canonical" href="https://opentabs.app/privacy.html" />
+<style>
+  :root { color-scheme: dark; --bg:#101014; --sunken:#17171d; --line:#2c2c36; --strong:#f4f4f6; --body:#c3c3cc; --muted:#8b8b98; --accent:#7aa2f7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--body); font:16px/1.7 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 30px 22px 60px; }
+  a { color: var(--accent); }
+  h1 { font-size:1.9rem; color:var(--strong); letter-spacing:-0.02em; margin:26px 0 6px; }
+  h2 { font-size:1.15rem; color:var(--strong); margin:34px 0 8px; }
+  p, li { font-size:0.97rem; }
+  .updated { color:var(--muted); font-size:0.88rem; margin:0 0 26px; }
+  .brand { color:var(--strong); text-decoration:none; font-weight:650; }
+  table { width:100%; border-collapse:collapse; margin:14px 0; font-size:0.92rem; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--strong); font-weight:600; }
+  code { background:var(--sunken); border:1px solid var(--line); border-radius:5px; padding:1px 5px; font-size:0.86em; }
+  footer { border-top:1px solid var(--line); margin-top:40px; padding-top:20px; color:var(--muted); font-size:0.88rem; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="brand" href="/">OpenTabs</a>
+
+  <h1>Privacy</h1>
+  <p class="updated">Short, because there is not much to describe.</p>
+
+  <h2>The extension</h2>
+  <p>
+    OpenTabs has no account, no analytics and no telemetry. Your configuration — every
+    group, every source, every to-do — is stored in your own browser profile and is never
+    sent anywhere. There is no server holding it, which is why there is no server that
+    could lose it.
+  </p>
+  <p>
+    The extension makes network requests only to fill the groups you turned on, and it
+    asks for a site's permission at the moment it first needs it rather than at install.
+    A group you never enable never asks for a site and never makes a request.
+  </p>
+
+  <table>
+    <tr><th>What it reaches</th><th>Why, and only when</th></tr>
+    <tr><td><code>opentabs.app</code></td><td>The apps catalogue and the trending list, as two static files. Only if one of those groups is on.</td></tr>
+    <tr><td><code>market.opentabs.app</code></td><td>The pack marketplace. Only when you open it.</td></tr>
+    <tr><td><code>auth.opentabs.app</code></td><td>OpenApps sign-in. Only if you choose to sign in.</td></tr>
+    <tr><td>Sites you added</td><td>A feed, a weather API, a calendar address, a market quote — whatever the groups you configured need. You granted each one.</td></tr>
+  </table>
+
+  <p>
+    Your open tabs are read by the extension and never leave the browser. They are the
+    page's content, not data collected about you.
+  </p>
+
+  <h2>Signing in</h2>
+  <p>
+    An OpenApps account is optional and buys two things: publishing a pack to the
+    marketplace, and liking one. It is never used to store your settings, and nothing
+    about your configuration is uploaded when you sign in.
+  </p>
+  <p>
+    The session lives in memory for the browser session and is never written to disk or
+    synced between devices.
+  </p>
+
+  <h2>The marketplace</h2>
+  <p>
+    Browsing and installing need no account and set no cookie. Install counts are a
+    number on the pack, incremented anonymously — nothing identifies who fetched it.
+  </p>
+  <p>
+    A like does need an account, and here the design is worth stating precisely.
+    A like is stored as
+    <code>HMAC-SHA256(server secret, account id ‖ pack id)</code> and the account id
+    itself is not stored beside it. The likes table has no user column, so the question
+    <em>"what has this account liked"</em> has no query that answers it — the server can
+    check whether <em>you</em> liked <em>this</em> pack, because it can recompute that one
+    digest, and it cannot enumerate anything. That is a property of the schema, asserted
+    by a test that reads the table's columns, rather than a promise about how the data
+    is used.
+  </p>
+  <p>
+    A pack you publish is public by definition: its name, description, tags, the author
+    handle you typed and the sources it contains. Your API keys, calendar addresses,
+    coordinates and card sizes are stripped out before it leaves your browser, and
+    stripped again on the server — the second time is not redundancy, it is where the
+    boundary actually is.
+  </p>
+
+  <h2>Payments</h2>
+  <p>OpenTabs charges for nothing, so there are none.</p>
+
+  <h2>Changes</h2>
+  <p>
+    If this ever describes something more than it does today, the change lands in the
+    public repository first, and the extension asks before doing anything new that needs
+    a permission it does not already hold.
+  </p>
+
+  <footer>
+    <a href="/">OpenTabs</a> ·
+    <a href="https://github.com/opentabs-app/OpenTabs">Source</a> ·
+    part of <a href="https://openapps.network">OpenApps</a>
+  </footer>
+</div>
+</body>
+</html>

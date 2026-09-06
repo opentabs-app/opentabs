@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentabs.app/tabs/config.schema.json",
+  "title": "OpenTabs configuration",
+  "description": "The whole of a user's OpenTabs configuration, as one document. Published so an agent can write it: 'add a group of Korean semiconductor news' should produce valid config, not a guess.",
+  "type": "object",
+  "required": ["version", "instances"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "theme": { "enum": ["auto", "light", "dark"], "default": "auto" },
+    "assistant": {
+      "enum": ["claude", "chatgpt", "perplexity", "google"],
+      "default": "claude",
+      "description": "Where the prompt bar sends you. Override per query with !c, !p, !g."
+    },
+    "instances": {
+      "type": "array",
+      "description": "Group instances, in display order. A def is code; an instance is config. There is one `tabs` instance and as many `topic` instances as you like.",
+      "items": { "$ref": "#/$defs/instance" }
+    }
+  },
+  "$defs": {
+    "instance": {
+      "type": "object",
+      "required": ["def", "id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "def": {
+          "enum": ["tabs", "topic", "apps", "weather", "crypto", "equities", "status", "trending", "calendar", "focus", "scratch", "todos"]
+        },
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "name": { "type": "string", "minLength": 1 },
+        "enabled": { "type": "boolean", "default": true },
+        "opts": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "def": { "const": "topic" } } },
+          "then": { "properties": { "opts": { "$ref": "#/$defs/topicOpts" } } }
+        }
+      ]
+    },
+    "topicOpts": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Substituted into every query binding. Quotes group a phrase, OR widens, a leading minus excludes. Example: \"high frequency trading\" OR \"market microstructure\" -crypto"
+        },
+        "sources": { "type": "array", "items": { "$ref": "#/$defs/binding" } },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 30, "default": 8 },
+        "exclude": { "type": "array", "items": { "type": "string" } },
+        "include": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "required": ["kind"],
+      "oneOf": [
+        {
+          "properties": {
+            "kind": { "const": "query" },
+            "tmpl": {
+              "enum": ["googlenews", "bingnews", "reddit", "subreddit", "arxiv", "arxiv_all", "hn"],
+              "description": "googlenews returns ~100 items for any topic and is usually enough on its own; each extra binding costs roughly another 130 KB per refresh."
+            },
+            "arg": {
+              "type": "string",
+              "description": "Overrides the topic query for this binding. Use for a category or subreddit: q-fin.TR is the arXiv HFT category, LocalLLaMA a subreddit."
+            },
+            "weight": { "type": "number", "default": 1 }
+          },
+          "required": ["tmpl"]
+        },
+        {
+          "properties": {
+            "kind": { "const": "feed" },
+            "url": { "type": "string", "format": "uri" },
+            "weight": { "type": "number", "default": 1 }
+          },
+          "required": ["url"]
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "version": 1,
+      "theme": "auto",
+      "assistant": "claude",
+      "instances": [
+        { "def": "tabs", "id": "tabs", "name": "Right now", "enabled": true, "opts": { "collapse_after": 8 } },
+        {
+          "def": "topic",
+          "id": "semis",
+          "name": "Semiconductor Supply Chain",
+          "enabled": true,
+          "opts": {
+            "query": "TSMC OR ASML OR \"chip supply chain\"",
+            "sources": [
+              { "kind": "query", "tmpl": "googlenews", "weight": 1 },
+              { "kind": "feed", "url": "https://www.mingtiandi.com/feed/", "weight": 1.5 }
+            ],
+            "limit": 8,
+            "exclude": ["sponsored"]
+          }
+        }
+      ]
+    }
+  ]
+}
