@@ -24,6 +24,20 @@ check "apps feed is JSON"           "apps" "$(curl -sS --max-time 10 https://ope
 check "feeds allow cross-origin reads" "access-control-allow-origin: *" \
   "$(curl -sS --max-time 10 -o /dev/null -D - https://opentabs.app/tabs/v1/apps.json | tr 'A-Z' 'a-z')"
 
+# The two that fail silently and that nobody notices until a link is pasted
+# somewhere public. A missing favicon is a blank tab; a missing or relative
+# og:image is a bare URL in Telegram, Slack and iMessage, usually with the
+# description dropped too.
+check "favicon.ico is served"       "200" \
+  "$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' https://opentabs.app/favicon.ico)"
+check "the preview card is served"  "200" \
+  "$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' https://opentabs.app/og-image.png)"
+# Absolute, and on this host. A relative og:image is the single most common
+# way a card renders as a bare link: a crawler has no page to resolve it
+# against.
+check "og:image is an absolute URL" "https://opentabs.app/og-image.png" \
+  "$(curl -sS --max-time 10 https://opentabs.app/ | grep -o 'property="og:image" content="[^"]*"')"
+
 echo "market.opentabs.app"
 check "site answers 200"            "200" "$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' https://market.opentabs.app/)"
 health=$(curl -sS --max-time 10 https://market.opentabs.app/health)
@@ -45,6 +59,11 @@ check "a deep link survives a refresh" "200" \
 # and nothing else on the page would show it.
 check "the sign-in element is served" "200" \
   "$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' https://market.opentabs.app/openapps/openapps-login.js)"
+# Its own copies. A different origin does not fall back to the apex.
+check "favicon.ico is served"       "200" \
+  "$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' https://market.opentabs.app/favicon.ico)"
+check "the preview card is served"  "200" \
+  "$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' https://market.opentabs.app/og-image.png)"
 
 echo "auth.opentabs.app"
 check "platform health"             '"ok":true' "$(curl -sS --max-time 10 https://auth.opentabs.app/healthz)"
