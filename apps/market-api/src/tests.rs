@@ -601,7 +601,12 @@ async fn only_a_moderator_can_hide_and_the_route_denies_existing_to_others() {
 }
 
 #[tokio::test]
-async fn health_needs_nothing_at_all() {
-    let res = router(app()).oneshot(get("/health", None)).await.unwrap();
-    assert_eq!(res.status(), StatusCode::OK);
+async fn health_needs_nothing_at_all_and_reports_whether_it_can_verify() {
+    let (status, body) = call(app(), get("/health", None)).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["ok"], true);
+    // The number that matters. Zero here means every publish and every like
+    // will answer 401 while the service looks perfectly healthy from every
+    // other angle — which is a morning nobody should have to spend.
+    assert_eq!(body["keys"], 1);
 }

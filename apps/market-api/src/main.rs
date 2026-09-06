@@ -115,8 +115,18 @@ type ApiResult<T> = Result<T, (StatusCode, Json<ApiError>)>;
 
 // ---------- handlers ----------
 
-async fn health() -> &'static str {
-    "ok"
+/// Liveness, plus the one fact that explains the most confusing failure.
+///
+/// A service that cannot fetch the platform's key set answers every publish
+/// and every like with 401 while looking perfectly healthy from every other
+/// angle. `keys: 0` says so in one line.
+async fn health(State(app): State<Shared>) -> Json<serde_json::Value> {
+    let (keys, fetched) = app.verifier.key_status();
+    Json(serde_json::json!({
+        "ok": true,
+        "keys": keys,
+        "keys_fetched": fetched,
+    }))
 }
 
 /// Browse and search. Open to everyone; no account, no cookie.
@@ -476,6 +486,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         verifier: auth::Verifier::new(&jwks_url),
         moderators,
     });
+
+    // Before the listener, so the log line lands in order and an operator
+    // reading the first ten lines of `docker logs` sees it.
+    match app.verifier.warm().await {
+        0 => eprintln!(
+            "WARNING: no signing keys from {jwks_url}\n\
+             Browsing works; publishing and liking will answer 401 until this \n\
+             succeeds. It is retried on demand. Check the URL and that the \n\
+             platform is reachable from inside this container."
+        ),
+        n => eprintln!("verifying tokens against {n} key(s) from {jwks_url}"),
+    }
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "8787".into());
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}")).await?;

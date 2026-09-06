@@ -8,7 +8,7 @@
  * server a token it will refuse.
  */
 import { describe, expect, it } from "vitest";
-import { expiryOf, fromSignInPage } from "./session";
+import { expiryOf, fromSignInPage, installableUrl } from "./session";
 
 /** A JWT with the given payload. Unsigned — nothing here verifies. */
 function jwt(payload: unknown): string {
@@ -66,5 +66,29 @@ describe("fromSignInPage", () => {
     expect(fromSignInPage(undefined)).toBe(false);
     expect(fromSignInPage("")).toBe(false);
     expect(fromSignInPage("not a url")).toBe(false);
+  });
+});
+
+describe("installableUrl", () => {
+  it("accepts a pack address on the marketplace", () => {
+    expect(installableUrl("https://market.opentabs.app/v1/packs/ai/install")).toBe(true);
+  });
+
+  it("refuses everywhere else", () => {
+    // What comes back is applied to the reader's configuration. "Fetch
+    // whatever the page asked for" is an invitation to install arbitrary
+    // settings from anywhere — including from a redirect they never saw.
+    for (const url of [
+      "https://market.opentabs.app.evil.test/v1/packs/x/install",
+      "https://evil.test/v1/packs/x/install",
+      "http://market.opentabs.app/v1/packs/x/install",
+      "https://opentabs.app/v1/packs/x/install",
+      "https://auth.opentabs.app/v1/packs/x/install",
+      "data:application/json,{}",
+      "",
+      "not a url",
+    ]) {
+      expect(installableUrl(url), url).toBe(false);
+    }
   });
 });

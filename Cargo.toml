@@ -9,7 +9,7 @@ members = ["crates/tabs-core", "crates/tabs-feedgen", "crates/tabs-market", "app
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/openapps/opentabs"
+repository = "https://github.com/opentabs-app/OpenTabs"
 
 [workspace.dependencies]
 tabs-core = { path = "crates/tabs-core" }

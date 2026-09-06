@@ -8,10 +8,29 @@ Built on the OpenApps design system.
 
 ```
 crates/tabs-core      pure Rust — parsing, ranking, grouping, dates. native + wasm
-crates/tabs-feedgen   the whole backend: two static files, no database
+crates/tabs-feedgen   the daily feeds: two static files, no database
+crates/tabs-market    the marketplace's ranking, moderation and privacy core
 apps/extension        MV3 extension (Chrome + Firefox), vanilla TS
+apps/marketplace      the pack marketplace, a static site
+apps/market-api       the marketplace API: axum + SQLite, one binary
+apps/site             opentabs.app itself
+deploy/               nginx, Docker and the runbook — see deploy/DEPLOY.md
 docs/config.schema.json  the published config schema
 ```
+
+## Where it runs
+
+| | |
+|---|---|
+| `opentabs.app` | the site, and the two daily feed files the extension reads |
+| `market.opentabs.app` | the pack marketplace — site and API on one origin |
+| `auth.opentabs.app` | OpenApps accounts, for the two things that need one |
+
+Signing in is optional and buys exactly two things: publishing a pack, and
+liking one. It is never used to store your configuration, which lives in your
+own browser profile and nowhere else.
+
+`deploy/DEPLOY.md` is the runbook.
 
 ## Three properties, in priority order
 

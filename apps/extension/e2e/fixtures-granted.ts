@@ -29,8 +29,16 @@ function grantedBuild(): string {
     (p: string) => p !== "bookmarks",
   );
   m.permissions = [...new Set([...(m.permissions ?? []), "bookmarks"])];
+  // Both hosts the marketplace pane asks for. `auth` is here even though no
+  // test signs in: the Publish button requests the pair together, and a test
+  // that reaches it would otherwise stall on a dialog automation cannot
+  // accept — which presents as a timeout with nothing to read.
   m.host_permissions = [
-    ...new Set([...(m.host_permissions ?? []), "https://market.opentabs.app/*"]),
+    ...new Set([
+      ...(m.host_permissions ?? []),
+      "https://market.opentabs.app/*",
+      "https://auth.opentabs.app/*",
+    ]),
   ];
   writeFileSync(path, JSON.stringify(m, null, 2));
   return out;
