@@ -231,6 +231,19 @@ const RELAYS: {
 ];
 
 /**
+ * Whether a permissions change could possibly affect a relay.
+ *
+ * Every origin this extension asks for — a feed, a weather API, a calendar —
+ * fires `permissions.onAdded`. Re-reading and rewriting the script registry
+ * on each of those is work the worker does for nothing, at exactly the
+ * moment a page is waiting on it for something else.
+ */
+export function touchesRelay(p: chrome.permissions.Permissions | undefined): boolean {
+  const origins = p?.origins ?? [];
+  return origins.some((o) => RELAY_MATCHES.has(o));
+}
+
+/**
  * Register whichever relays we hold permission for.
  *
  * Registration survives worker restarts, so this is idempotent by design: it
@@ -259,6 +272,9 @@ export async function ensureRelays(): Promise<void> {
     }
   }
 }
+
+/** The origins the relays are registered against, for the check above. */
+const RELAY_MATCHES = new Set([OPENAPPS_MATCH, MARKET_MATCH]);
 
 /**
  * Whether a URL is one we are willing to fetch a pack from.

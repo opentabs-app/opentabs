@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="oa-dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -16,23 +16,42 @@
 <meta property="og:url" content="https://opentabs.app/privacy.html" />
 <meta property="og:image" content="https://opentabs.app/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
+<link rel="stylesheet" href="/tokens/styles.css" />
 <style>
-  :root { color-scheme: dark; --bg:#101014; --sunken:#17171d; --line:#2c2c36; --strong:#f4f4f6; --body:#c3c3cc; --muted:#8b8b98; --accent:#7aa2f7; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--body); font:16px/1.7 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
-  .wrap { max-width: 720px; margin: 0 auto; padding: 30px 22px 60px; }
-  a { color: var(--accent); }
-  h1 { font-size:1.9rem; color:var(--strong); letter-spacing:-0.02em; margin:26px 0 6px; }
-  h2 { font-size:1.15rem; color:var(--strong); margin:34px 0 8px; }
-  p, li { font-size:0.97rem; }
-  .updated { color:var(--muted); font-size:0.88rem; margin:0 0 26px; }
-  .brand { color:var(--strong); text-decoration:none; font-weight:650; }
-  table { width:100%; border-collapse:collapse; margin:14px 0; font-size:0.92rem; }
-  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
-  th { color:var(--strong); font-weight:600; }
-  code { background:var(--sunken); border:1px solid var(--line); border-radius:5px; padding:1px 5px; font-size:0.86em; }
-  footer { border-top:1px solid var(--line); margin-top:40px; padding-top:20px; color:var(--muted); font-size:0.88rem; }
-  footer a { color: var(--muted); }
+  /* Layout only; every value comes from the shared tokens. */
+  :root { --app-opentabs: var(--accent-2); }
+  body { margin: 0; background: var(--bg-page); color: var(--text-body); }
+  .wrap { max-width: 45rem; margin: 0 auto; padding: var(--space-7) var(--space-6) var(--space-16); }
+  .brand { color: var(--text-strong); text-decoration: none; font-weight: var(--weight-medium); }
+  h1 {
+    font: var(--weight-bold) var(--text-4xl)/var(--leading-tight) var(--font-display, var(--font-sans));
+    letter-spacing: var(--tracking-display);
+    color: var(--text-strong); margin: var(--space-6) 0 var(--space-2);
+  }
+  h2 {
+    font: var(--weight-medium) var(--text-xl)/var(--leading-snug) var(--font-display, var(--font-sans));
+    color: var(--text-strong); margin: var(--space-8) 0 var(--space-2);
+  }
+  p, li { font-size: var(--text-sm); line-height: var(--leading-relaxed); }
+  .updated { color: var(--text-muted); font-size: var(--text-xs); margin: 0 0 var(--space-6); }
+  table { width: 100%; border-collapse: collapse; margin: var(--space-4) 0; font-size: var(--text-sm); }
+  th, td {
+    text-align: left; padding: var(--space-2) var(--space-3);
+    border-bottom: var(--border-width) solid var(--border-hairline); vertical-align: top;
+  }
+  th { color: var(--text-strong); font-weight: var(--weight-medium); }
+  code {
+    background: var(--bg-sunken);
+    border: var(--border-width) solid var(--border-hairline);
+    border-radius: var(--radius-xs);
+    padding: 1px 5px; font-family: var(--font-mono); font-size: 0.86em;
+  }
+  footer {
+    border-top: var(--border-width) solid var(--border-hairline);
+    margin-top: var(--space-10); padding-top: var(--space-5);
+    color: var(--text-muted); font-size: var(--text-xs);
+  }
+  footer a { color: var(--text-muted); }
 </style>
 </head>
 <body>
@@ -59,7 +78,7 @@
     <tr><th>What it reaches</th><th>Why, and only when</th></tr>
     <tr><td><code>opentabs.app</code></td><td>The apps catalogue and the trending list, as two static files. Only if one of those groups is on.</td></tr>
     <tr><td><code>market.opentabs.app</code></td><td>The pack marketplace. Only when you open it.</td></tr>
-    <tr><td><code>auth.opentabs.app</code></td><td>OpenApps sign-in. Only if you choose to sign in.</td></tr>
+    <tr><td><code>auth.opentabs.app</code></td><td>Sign-in, for the two things that need an account. Only if you choose to sign in.</td></tr>
     <tr><td>Sites you added</td><td>A feed, a weather API, a calendar address, a market quote — whatever the groups you configured need. You granted each one.</td></tr>
   </table>
 
@@ -70,7 +89,7 @@
 
   <h2>Signing in</h2>
   <p>
-    An OpenApps account is optional and buys two things: publishing a pack to the
+    An account is optional and buys two things: publishing a pack to the
     marketplace, and liking one. It is never used to store your settings, and nothing
     about your configuration is uploaded when you sign in.
   </p>
@@ -116,7 +135,7 @@
   <footer>
     <a href="/">OpenTabs</a> ·
     <a href="https://github.com/opentabs-app/OpenTabs">Source</a> ·
-    part of <a href="https://openapps.network">OpenApps</a>
+    <a href="https://market.opentabs.app">Packs</a>
   </footer>
 </div>
 </body>

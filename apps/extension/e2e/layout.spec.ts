@@ -441,3 +441,38 @@ test("open New Tab pages stay out of the list", async ({ context, extensionId })
   expect(urls.some((u) => /^(chrome|edge):\/\/newtab/.test(u))).toBe(false);
   expect(urls.some((u) => u === "https://example.com/")).toBe(true);
 });
+
+test("the new tab offers to sign in, and claims no account until there is one", async ({
+  context,
+  extensionId,
+}) => {
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/newtab.html`);
+
+  const account = page.locator("#account");
+  await expect(account).toBeVisible();
+  await expect(account).toHaveAttribute("title", "Sign in");
+  // The dot is the only signed-in signal, and it must not appear on a
+  // profile that has never signed in — a green dot claiming a session that
+  // does not exist is worse than no indicator at all.
+  await expect(page.locator("#accountdot")).toBeHidden();
+
+  // It sits with the other masthead controls, not somewhere of its own.
+  await expect(page.locator(".masthead-right .iconbtn")).toHaveCount(2);
+});
+
+test("opening the new tab still costs no network request", async ({ context, extensionId }) => {
+  // The account button talks to the worker, not the network — and the whole
+  // point of this page is that opening it is one storage read and a paint. A
+  // sign-in control that phoned the platform on load would undo that
+  // silently, on a page that opens fifty times a day.
+  const page = await context.newPage();
+  const external: string[] = [];
+  page.on("request", (r) => {
+    if (!r.url().startsWith("chrome-extension://")) external.push(r.url());
+  });
+  await page.goto(`chrome-extension://${extensionId}/newtab.html`);
+  await page.waitForSelector(".card");
+  await page.waitForTimeout(500);
+  expect(external, `the new tab fetched: ${external.join(", ")}`).toEqual([]);
+});

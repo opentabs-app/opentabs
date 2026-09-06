@@ -65,6 +65,16 @@ check "favicon.ico is served"       "200" \
 check "the preview card is served"  "200" \
   "$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' https://market.opentabs.app/og-image.png)"
 
+# The product's pages must never name the platform. It is the one thing a
+# reader of these pages has never heard of, and it reads like the site is
+# talking about somebody else's company. Checked rather than remembered,
+# because it creeps back in one FAQ answer at a time.
+echo "the platform is not named anywhere a reader can see"
+for page in https://opentabs.app/ https://opentabs.app/privacy.html https://market.opentabs.app/; do
+  check "no mention on ${page#https://}" "0" \
+    "$(curl -sS --max-time 10 "$page" | grep -c 'OpenApps' || true)"
+done
+
 echo "auth.opentabs.app"
 check "platform health"             '"ok":true' "$(curl -sS --max-time 10 https://auth.opentabs.app/healthz)"
 # The API verifies every bearer token against this document. If it is not

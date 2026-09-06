@@ -452,8 +452,17 @@ ext.runtime.onStartup.addListener(() => {
 // tells this extension to tidy up. A relay left registered on an origin we
 // no longer hold is one Chrome refuses to run anyway; re-running the check
 // keeps the registration honest.
-ext.permissions.onRemoved.addListener(() => void session.ensureRelays());
-ext.permissions.onAdded.addListener(() => void session.ensureRelays());
+//
+// Only for the two origins a relay is registered against. Every feed,
+// weather API and calendar the reader adds also fires these, and rewriting
+// the script registry on each is work the worker does for nothing — while a
+// page is waiting on it for something else.
+ext.permissions.onRemoved.addListener((p) => {
+  if (session.touchesRelay(p)) void session.ensureRelays();
+});
+ext.permissions.onAdded.addListener((p) => {
+  if (session.touchesRelay(p)) void session.ensureRelays();
+});
 
 ext.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === ALARM_REFRESH) void refreshAll();

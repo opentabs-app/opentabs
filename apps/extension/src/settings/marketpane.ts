@@ -312,7 +312,7 @@ export function openShareDialog(d: Deps, instanceId: string) {
       .catch((e: Error) => {
         status.textContent =
           e.message === "declined"
-            ? "Publishing needs access to your OpenApps account. Copying the pack does not."
+            ? "Publishing needs access to your account. Copying the pack does not."
             : "That did not go through.";
       })
       .finally(() => {
@@ -332,7 +332,7 @@ export function openShareDialog(d: Deps, instanceId: string) {
     status.textContent = "Signing in…";
     const token = await signIn();
     if (!token) {
-      status.textContent = "Publishing needs an OpenApps account. Copying the pack does not.";
+      status.textContent = "Publishing needs an account. Copying the pack does not.";
       return;
     }
 

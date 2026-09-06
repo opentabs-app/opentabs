@@ -10,6 +10,7 @@
  * over a message rather than done here.
  */
 import { ext, KEY, getLocal, getSync, setLocal } from "../lib/ext";
+import { OPENAPPS_MATCH } from "../lib/openapps";
 import { applyTheme } from "../lib/theme";
 import type { Config, LocalState, Payloads } from "../lib/types";
 import { makeArrangeable, packGrid, watchGrid, type Span } from "./layout";
@@ -89,6 +90,7 @@ async function main() {
   document.getElementById("settings")!.addEventListener("click", () => {
     void ext.runtime.openOptionsPage();
   });
+  setupAccount();
 
   const saveLocal = (s: LocalState) => {
     void setLocal(KEY.local, s);
@@ -229,3 +231,79 @@ function setupPrompt(defaultAssistant: string) {
 // storage.local is fast, but not synchronous — start immediately rather than
 // waiting for DOMContentLoaded, since the script is a module and defers already.
 void main();
+
+
+/**
+ * The account button.
+ *
+ * Signing in cannot happen on this page, and the reason is structural rather
+ * than a shortcut: Chrome injects `window.ethereum` and `window.nostr` from
+ * content scripts, and content scripts never run on `chrome-extension://`
+ * URLs. Wallet and Nostr sign-in are therefore impossible here however long
+ * you wait for the globals — a form on this page could only ever offer
+ * Google, with two buttons that error. So the button opens the platform's
+ * own https sign-in page in a tab, and a relay registered on that origin
+ * hands the session back to the worker.
+ *
+ * Nothing here is on the paint path. The button renders signed-out from
+ * markup; the worker is asked afterwards and the dot appears if it differs.
+ */
+function setupAccount() {
+  const btn = document.getElementById("account");
+  const dot = document.getElementById("accountdot");
+  if (!btn || !dot) return;
+
+  let signedIn = false;
+
+  const draw = (yes: boolean) => {
+    signedIn = yes;
+    dot.hidden = !yes;
+    btn.classList.toggle("on", yes);
+    btn.title = yes ? "Signed in — click to sign out" : "Sign in";
+    btn.setAttribute("aria-label", btn.title);
+  };
+
+  const ask = () =>
+    ext.runtime
+      .sendMessage({ type: "authState" })
+      .then((r: { signedIn?: boolean } | undefined) => draw(!!r?.signedIn))
+      .catch(() => {});
+
+  void ask();
+
+  btn.addEventListener("click", () => {
+    if (signedIn) {
+      // Immediate rather than behind a confirm dialog: signing back in is
+      // two clicks, and a menu on this page is a menu on the page that has
+      // to open in under a frame.
+      void ext.runtime.sendMessage({ type: "authSignOut" }).then(() => draw(false)).catch(() => {});
+      return;
+    }
+    // Permission first, and nothing awaited before it: one `await` spends
+    // the user activation and the prompt then never appears — no error, no
+    // dialog, just a button that does nothing. Already granted resolves
+    // immediately without prompting, so calling it every time is safe and is
+    // what keeps it first.
+    //
+    // Without it the worker registers no relay on the sign-in origin, the
+    // session is never handed back, and the tab sits there looking finished.
+    void ext.permissions
+      .request({ origins: [OPENAPPS_MATCH] })
+      .then((ok) => {
+        if (!ok) return false;
+        // The worker opens the tab and resolves when the session arrives, so
+        // there is nothing to poll and no window to keep a handle on.
+        return ext.runtime
+          .sendMessage({ type: "authSignIn" })
+          .then((r: { ok?: boolean } | undefined) => !!r?.ok);
+      })
+      .then((ok) => draw(!!ok))
+      .catch(() => {});
+  });
+
+  // Signing in happens in another tab, and this one may have been sitting
+  // open the whole time. Re-check when it comes back into view.
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) void ask();
+  });
+}
