@@ -27,7 +27,13 @@
  * that ends the habit of publishing.
  */
 import { ext } from "../lib/ext";
-import { OPENAPPS_BASE_URL, OPENAPPS_MATCH, SIGNIN_URL } from "../lib/openapps";
+import {
+  MARKET_MATCH,
+  MARKET_ORIGIN,
+  OPENAPPS_BASE_URL,
+  OPENAPPS_MATCH,
+  SIGNIN_URL,
+} from "../lib/openapps";
 
 /** The stored session. `refresh` may be absent — some flows return only one. */
 export interface Session {
@@ -191,40 +197,90 @@ export async function signOut(): Promise<void> {
 }
 
 /**
- * Make sure the relay runs on the sign-in page.
+ * The two pages this extension listens on, and what each is for.
  *
- * Registered rather than declared in the manifest, so the permission is
- * asked for at the moment someone chooses to sign in — not at install, from
- * everyone, including the majority who never will.
- *
- * Registration survives worker restarts, so this is idempotent by design:
- * it updates an existing registration instead of failing on the duplicate.
+ * Registered dynamically rather than declared in the manifest, so each
+ * permission is asked for at the moment somebody chooses the feature — not
+ * at install, from everyone, including the majority who never will.
  */
-export async function ensureRelay(): Promise<void> {
-  if (!(await hasAuthAccess())) return;
-  const script: chrome.scripting.RegisteredContentScript = {
+const RELAYS: {
+  id: string;
+  match: string;
+  matches: string[];
+  js: string;
+  runAt: chrome.scripting.RegisteredContentScript["runAt"];
+}[] = [
+  {
     id: "openapps-signin-relay",
+    match: OPENAPPS_MATCH,
     matches: [`${OPENAPPS_BASE_URL}/signin*`],
-    js: ["signin-relay.js"],
+    js: "signin-relay.js",
     // The page can post the session as soon as it loads, on the leg back
     // from Google. A listener registered at document_idle would miss it.
     runAt: "document_start",
-    persistAcrossSessions: true,
-  };
+  },
+  {
+    id: "opentabs-market-relay",
+    match: MARKET_MATCH,
+    matches: [`${MARKET_ORIGIN}/*`],
+    js: "market-relay.js",
+    // Nothing here is posted before a click, so document_idle is enough and
+    // it keeps the script off the paint path of a page someone is reading.
+    runAt: "document_idle",
+  },
+];
+
+/**
+ * Register whichever relays we hold permission for.
+ *
+ * Registration survives worker restarts, so this is idempotent by design: it
+ * updates an existing registration rather than failing on the duplicate.
+ */
+export async function ensureRelays(): Promise<void> {
+  for (const r of RELAYS) {
+    const allowed = await ext.permissions.contains({ origins: [r.match] }).catch(() => false);
+    if (!allowed) continue;
+    const script: chrome.scripting.RegisteredContentScript = {
+      id: r.id,
+      matches: r.matches,
+      js: [r.js],
+      runAt: r.runAt,
+      persistAcrossSessions: true,
+    };
+    try {
+      const existing = await ext.scripting.getRegisteredContentScripts({ ids: [r.id] });
+      if (existing.length > 0) await ext.scripting.updateContentScripts([script]);
+      else await ext.scripting.registerContentScripts([script]);
+    } catch {
+      // Firefox before 101 and some enterprise policies refuse dynamic
+      // registration. The feature then simply does not complete, and the
+      // page says so rather than spinning: the marketplace site falls back
+      // to an address to paste, and sign-in reports that it did not finish.
+    }
+  }
+}
+
+/**
+ * Whether a URL is one we are willing to fetch a pack from.
+ *
+ * The marketplace's own origin and nothing else. This document is about to
+ * be applied to the reader's configuration, and "fetch whatever the page
+ * asked for and apply it" is an invitation to install arbitrary settings
+ * from anywhere. Someone who wants a pack from elsewhere can paste the pack
+ * itself, which goes through exactly the same validation with nothing hidden
+ * behind a redirect.
+ */
+export function installableUrl(url: string): boolean {
   try {
-    const existing = await ext.scripting.getRegisteredContentScripts({ ids: [script.id] });
-    if (existing.length > 0) await ext.scripting.updateContentScripts([script]);
-    else await ext.scripting.registerContentScripts([script]);
+    return new URL(url).origin === new URL(MARKET_ORIGIN).origin;
   } catch {
-    // Firefox before 101 and some enterprise policies refuse dynamic
-    // registration. Sign-in then simply does not complete, and the page
-    // says so rather than spinning.
+    return false;
   }
 }
 
 /** Open the sign-in page. Returns the tab, so the caller can close it. */
 export async function openSignIn(): Promise<number | null> {
-  await ensureRelay();
+  await ensureRelays();
   const tab = await ext.tabs.create({ url: SIGNIN_URL });
   return tab.id ?? null;
 }

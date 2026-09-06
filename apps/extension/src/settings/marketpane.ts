@@ -72,6 +72,11 @@ export async function showMarketPane(d: Deps) {
           .then((ok) => {
             if (!ok) return d.toast("Access declined — the marketplace cannot load.");
             d.$("marketaccess").hidden = true;
+            // Now that the origin is granted, the worker can register the
+            // relay that makes "Add to OpenTabs" work on the website itself.
+            // Asking here rather than at the next browser start is the
+            // difference between that button working today and tomorrow.
+            void ext.runtime.sendMessage({ type: "ensureRelays" }).catch(() => {});
             void draw(d);
           })
           .catch(() => {});

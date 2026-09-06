@@ -124,6 +124,32 @@ impl Verifier {
         }
     }
 
+    /// Fetch the key set once, before the first request needs it.
+    ///
+    /// Two reasons, and the second is the real one. The first publish should
+    /// not pay for a network round trip to a third party. And a service that
+    /// only discovers at 3am that it cannot reach the platform is a service
+    /// whose logs say nothing useful — this one says so at startup, when
+    /// somebody is watching.
+    pub async fn warm(&self) -> usize {
+        self.refresh().await;
+        self.key_status().0
+    }
+
+    /// How many signing keys are held, and when they were last fetched.
+    ///
+    /// Reported by `/health` because "every publish returns 401" has exactly
+    /// one common cause — the key set never arrived — and that is not
+    /// something an operator can work out from outside. A count and a
+    /// timestamp; nothing about any account, and nothing secret. The public
+    /// half of a signing key is published by the platform on purpose.
+    pub fn key_status(&self) -> (usize, i64) {
+        match self.state.read() {
+            Ok(s) => (s.keys.len(), s.attempted),
+            Err(_) => (0, 0),
+        }
+    }
+
     fn with_keys<T>(&self, f: impl FnOnce(&KeySet) -> T) -> T {
         match self.state.read() {
             Ok(s) => f(&s.keys),
@@ -141,13 +167,17 @@ impl Verifier {
     }
 
     async fn refresh(&self) {
+        // Check and claim under one write lock. Splitting this into a read
+        // that decides and a write that records leaves a window in which
+        // every concurrent request passes the floor and fetches — the exact
+        // stampede the floor exists to prevent.
         {
-            let Ok(s) = self.state.read() else { return };
+            let Ok(mut s) = self.state.write() else {
+                return;
+            };
             if now() - s.attempted < REFRESH_FLOOR {
                 return;
             }
-        }
-        if let Ok(mut s) = self.state.write() {
             s.attempted = now();
         }
 
@@ -209,7 +239,9 @@ pub fn parse_jwks(body: &str) -> Option<KeySet> {
         let (Some(kid), Some(x)) = (get("kid"), get("x")) else {
             continue;
         };
-        let Some(bytes) = b64url_decode(x) else { continue };
+        let Some(bytes) = b64url_decode(x) else {
+            continue;
+        };
         let Ok(bytes) = <[u8; 32]>::try_from(bytes.as_slice()) else {
             continue;
         };
@@ -475,7 +507,11 @@ mod tests {
     #[test]
     fn malformed_tokens_are_refused_rather_than_panicking() {
         for t in ["", ".", "a.b", "a.b.c.d", "!!!.???.***", "a..c"] {
-            assert_eq!(verify(t, &key_set(7, KID), NOW), Err(Refusal::Invalid), "{t}");
+            assert_eq!(
+                verify(t, &key_set(7, KID), NOW),
+                Err(Refusal::Invalid),
+                "{t}"
+            );
         }
     }
 

@@ -23,7 +23,12 @@ check "feeds allow cross-origin reads" "access-control-allow-origin: *" \
 
 echo "market.opentabs.app"
 check "site answers 200"            "200" "$(curl -sS -o /dev/null -w '%{http_code}' https://market.opentabs.app/)"
-check "API health"                  "ok"  "$(curl -sS --max-time 10 https://market.opentabs.app/health)"
+health=$(curl -sS --max-time 10 https://market.opentabs.app/health)
+check "API health"                  '"ok":true' "$health"
+# The single most confusing failure this deployment can have: the service is
+# up, browsing works, and every publish and every like answers 401 because it
+# never fetched the platform's key set. `"keys":0` is that, said out loud.
+check "API can verify a token"      '"keys":1'  "$health"
 check "browse returns a listing set" "listings" \
   "$(curl -sS --max-time 10 'https://market.opentabs.app/v1/packs?limit=1' | head -c 200)"
 # The one that matters and the one that is invisible: /v1/ must reach the API

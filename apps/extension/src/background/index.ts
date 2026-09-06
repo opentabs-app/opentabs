@@ -434,14 +434,26 @@ async function schedulePrune(): Promise<void> {
 
 ext.runtime.onInstalled.addListener(() => {
   void installAlarms();
+  // An update replaces the extension's files, and a registration that points
+  // at the old ones is not carried across. Re-registering here is what stops
+  // "Add to OpenTabs" quietly dying at the next version bump.
+  void session.ensureRelays();
   void clearStoredErrors().then(() => refreshAll(true));
 });
 
 ext.runtime.onStartup.addListener(() => {
   void installAlarms();
+  void session.ensureRelays();
   void sweepOverdue();
   void clearStoredErrors().then(() => refreshAll());
 });
+
+// Permissions can be revoked from the browser's own settings, where nothing
+// tells this extension to tidy up. A relay left registered on an origin we
+// no longer hold is one Chrome refuses to run anyway; re-running the check
+// keeps the registration honest.
+ext.permissions.onRemoved.addListener(() => void session.ensureRelays());
+ext.permissions.onAdded.addListener(() => void session.ensureRelays());
 
 ext.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === ALARM_REFRESH) void refreshAll();
@@ -567,6 +579,50 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (type === "authSignOut") {
     void session.signOut().then(() => sendResponse({ ok: true }));
+    return true;
+  }
+  /** Registered relays follow the permissions, so the pane re-checks after
+   *  a grant rather than waiting for the next browser start. */
+  if (type === "ensureRelays") {
+    void session.ensureRelays().then(() => sendResponse({ ok: true }));
+    return true;
+  }
+  /**
+   * Install a pack the marketplace site handed over.
+   *
+   * Two checks, and both matter. The *sender* must be the marketplace page —
+   * otherwise any site that guessed the message shape could ask. And the
+   * *URL* must be on the marketplace's own origin, because what comes back
+   * is about to be applied to the reader's configuration.
+   */
+  if (type === "installFromUrl") {
+    const url = (msg as { url?: string }).url ?? "";
+    if (!session.installableUrl(sender?.url ?? "") || !session.installableUrl(url)) {
+      sendResponse({ ok: false });
+      return false;
+    }
+    void (async () => {
+      try {
+        const res = await fetch(url, { headers: { accept: "application/json" }, credentials: "omit" });
+        if (!res.ok) return sendResponse({ ok: false });
+        const pack = await res.json();
+        const core = await wasm();
+        const cfg = await loadConfig();
+        const out = core.applyPack(cfg as unknown as object, pack as object) as {
+          config: Config;
+          result: { added: string[]; renamed: string[]; theme_applied: boolean };
+        } | null;
+        if (!out) return sendResponse({ ok: false });
+        if (out.result.added.length === 0 && !out.result.theme_applied) {
+          return sendResponse({ ok: false });
+        }
+        await setSync(KEY.config, out.config);
+        await refreshAll(true);
+        sendResponse({ ok: true, result: out.result });
+      } catch {
+        sendResponse({ ok: false });
+      }
+    })();
     return true;
   }
 
