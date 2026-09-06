@@ -82,6 +82,18 @@ check "platform health"             '"ok":true' "$(curl -sS --max-time 10 https:
 check "JWKS is published"           "Ed25519" "$(curl -sS --max-time 10 https://auth.opentabs.app/.well-known/jwks.json)"
 check "sign-in page is served"      "200" \
   "$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' https://auth.opentabs.app/signin)"
+# Serving the page is not the same as sign-in working. /signin sends the
+# browser to Google with `return_to` set to its own href, and that origin is
+# validated against the server's allowed_origins — which, on a masked host,
+# it is NOT in implicitly. Missing, every sign-in dies here with
+# "return_to origin ... is not in allowed_origins", and nothing upstream
+# gives any sign of it.
+check "sign-in can actually start"  "307" \
+  "$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
+     'https://auth.opentabs.app/v1/auth/oidc/google/start?return_to=https%3A%2F%2Fauth.opentabs.app%2Fsignin')"
+# And the open-redirect gate still holds.
+check "a stranger's return_to is refused" "not in allowed_origins" \
+  "$(curl -sS --max-time 10 'https://auth.opentabs.app/v1/auth/oidc/google/start?return_to=https%3A%2F%2Fevil.test%2Fx')"
 
 # CORS is the one that fails silently, so check it with a real preflight.
 # A HEAD request gets no CORS headers at all, so `curl -I` returns nothing
