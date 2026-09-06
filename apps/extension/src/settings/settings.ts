@@ -1182,7 +1182,44 @@ function showPane(pane: string) {
   $(`pane-${pane}`).classList.add("on");
   if (pane === "data") drawData();
   if (pane === "general") void showPerms();
-  if (pane === "market") void showMarketPane(marketDeps());
+  if (pane === "market") {
+    drawShareRow();
+    void showMarketPane(marketDeps());
+  }
+}
+
+/**
+ * A Share button for every group that can be published.
+ *
+ * "How do I add something to the marketplace" had, until now, one answer:
+ * go to Groups and find the small lowercase `share` control sitting among
+ * the move and remove buttons. That is a true answer and a bad one. The
+ * question is asked *on this pane*, so it is answered here.
+ *
+ * Rebuilt each time the pane opens rather than once at load: groups are
+ * added and renamed on the pane next door.
+ */
+function drawShareRow() {
+  const row = document.getElementById("sharerow");
+  if (!row) return;
+  row.replaceChildren();
+
+  const shareable = cfg.instances.filter((i) => SHAREABLE.has(i.def));
+  if (shareable.length === 0) {
+    row.append(
+      el(
+        "div",
+        "hint",
+        "Nothing to publish yet — add a topic or a search under Groups, then come back.",
+      ),
+    );
+    return;
+  }
+  for (const inst of shareable) {
+    const b = el("button", "btn", `Share “${inst.name}”`);
+    b.addEventListener("click", () => openShareDialog(marketDeps(), inst.id));
+    row.append(b);
+  }
 }
 
 /**
@@ -1236,6 +1273,11 @@ async function main() {
   drawCalendars();
 
   // `#i=<instance>` — where the per-card gear lands.
+  // `#pane=market` from the new tab's Packs button. Checked before `#i=`
+  // because a pane is the coarser target and the two never both appear.
+  const wantPane = /^#pane=([a-z]+)$/.exec(location.hash);
+  if (wantPane && document.getElementById(`pane-${wantPane[1]}`)) showPane(wantPane[1]!);
+
   const target = /^#i=(.+)$/.exec(location.hash);
   if (target) focusInstance(decodeURIComponent(target[1]!));
   window.addEventListener("hashchange", () => {

@@ -90,6 +90,33 @@ button {
    severity, and it sets `display: inline-block`. An author rule beats the
    user agent's `[hidden] { display: none }`, so reusing the name left the
    indicator permanently visible — claiming a session nobody had. */
+/* The marketplace entry point. Labelled, because an unlabelled glyph up
+   here would be the third icon in a row and read as another setting.
+
+   `--app-opentabs` is declared here rather than in the token files so that
+   refreshing them cannot silently drop it. --blue is #15b9eb, already
+   exactly the colour of the mark. */
+:root { --app-opentabs: var(--blue, #15b9eb); }
+.packsbtn {
+  display: flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 11px 0 8px; border-radius: 8px;
+  border: 1px solid transparent; background: none;
+  color: var(--text-muted, #7c7c7c);
+  font: inherit; font-size: 0.85rem; cursor: pointer;
+}
+.packsbtn:hover {
+  background: var(--bg-sunken, #f0f0ee);
+  border-color: var(--border-hairline, #deded9);
+  color: var(--text-strong, #020202);
+}
+.packsbtn .brand-tile {
+  display: grid; place-items: center; width: 20px; height: 20px;
+  border-radius: 6px; flex: none;
+  background: color-mix(in oklab, var(--app-opentabs) 16%, transparent);
+  color: var(--app-opentabs);
+}
+.packsbtn .brand-tile svg { display: block; }
+
 #account { position: relative; }
 #account .acct-dot {
   position: absolute; right: 4px; bottom: 4px;
