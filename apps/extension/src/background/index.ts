@@ -617,7 +617,11 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           return sendResponse({ ok: false });
         }
         await setSync(KEY.config, out.config);
-        await refreshAll(true);
+        // Same reason as `installPack` above, and it matters more here: the
+        // marketplace site gives up after 700ms and shows an address to
+        // paste instead. Awaiting the refresh would mean "Add to OpenTabs"
+        // always fell back, even with the extension installed and working.
+        void refreshAll(true);
         sendResponse({ ok: true, result: out.result });
       } catch {
         sendResponse({ ok: false });
@@ -710,7 +714,17 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // validation must not rewrite a good config with an identical one.
         if (out.result.added.length > 0 || out.result.theme_applied) {
           await setSync(KEY.config, out.config);
-          await refreshAll(true);
+          // NOT awaited. `refreshAll` fetches every enabled group, which can
+          // take twenty seconds against slow or unreachable sources — and
+          // the caller is a settings page waiting to say "Added". Awaiting it
+          // meant pressing the button did nothing visible for that whole
+          // time, which reads as a broken button and gets pressed again.
+          //
+          // The answer does not depend on the refresh: the merge has already
+          // succeeded and been stored by this line. The groups fill in behind
+          // the confirmation, which is the order the reader experiences as
+          // fast rather than the one that is technically most complete.
+          void refreshAll(true);
         }
         sendResponse({ ok: out.result.problems.length === 0, result: out.result });
       } catch (e) {

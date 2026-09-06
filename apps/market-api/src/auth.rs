@@ -187,24 +187,40 @@ impl Verifier {
         }
         // `ureq` blocks. On a runtime worker that would stall every other
         // request on this thread for the length of a network round trip.
-        let body = tokio::task::spawn_blocking(move || {
-            ureq::get(&url)
+        //
+        // The error is kept rather than discarded. A swallowed one here is
+        // indistinguishable from a key set that parsed to nothing, and those
+        // two have completely different fixes — one is the network or the
+        // URL, the other is the document.
+        let fetched = tokio::task::spawn_blocking(move || {
+            let res = ureq::get(&url)
                 .timeout(std::time::Duration::from_secs(5))
                 .call()
-                .ok()?
-                .into_string()
-                .ok()
+                .map_err(|e| e.to_string())?;
+            res.into_string().map_err(|e| e.to_string())
         })
-        .await
-        .ok()
-        .flatten();
+        .await;
 
-        let Some(keys) = body.as_deref().and_then(parse_jwks) else {
+        let body = match fetched {
+            Ok(Ok(body)) => body,
+            Ok(Err(e)) => {
+                eprintln!("jwks fetch failed: {e}");
+                return;
+            }
+            Err(e) => {
+                eprintln!("jwks fetch task failed: {e}");
+                return;
+            }
+        };
+
+        let keys = parse_jwks(&body).unwrap_or_default();
+        if keys.is_empty() {
             // Keep the keys we have. A failed fetch is not a reason to start
             // refusing tokens that were verifying a second ago.
-            return;
-        };
-        if keys.is_empty() {
+            eprintln!(
+                "jwks fetched but held no Ed25519 signing key ({} bytes)",
+                body.len()
+            );
             return;
         }
         if let Ok(mut s) = self.state.write() {
