@@ -1,0 +1,107 @@
+name: GitHub Release
+
+# Attaches installable builds to the tag's Release page, so a change can be
+# tried before it clears a store review.
+#
+# `tags: ["v*"]` — every tag, release candidates included. There is
+# deliberately no publish-to-store workflow in this repository yet: no store
+# listing exists, and adding one that submits on a bare `vX.Y.Z` tag is a
+# thing to set up on purpose rather than to inherit. Until it exists, no tag
+# can reach a store, which is the safe direction.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  WASM_BINDGEN_VERSION: "0.2.126"
+
+jobs:
+  release:
+    name: build both targets and attach them to the Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      # The CLI version must match the crate pin exactly — the generated glue
+      # is schema-versioned, and a mismatch fails with a message that does not
+      # name the real cause.
+      - name: Install wasm-bindgen-cli (pinned)
+        run: cargo install wasm-bindgen-cli --version ${{ env.WASM_BINDGEN_VERSION }} --locked
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/extension/package-lock.json
+      - run: npm ci
+        working-directory: apps/extension
+
+      # The same gate CI runs. A tag that ships a broken build is worse than
+      # a tag that fails, because somebody installs it.
+      - name: Check
+        working-directory: apps/extension
+        run: |
+          npm run build:wasm
+          npm run typecheck
+
+      - name: Build Chromium and Firefox
+        working-directory: apps/extension
+        run: |
+          npm run build
+          npm run build:firefox
+
+      - name: Budget and manifest assertions
+        working-directory: apps/extension
+        run: npm test
+
+      # Zip the *contents*, not the directory: both browsers reject a package
+      # whose manifest.json sits one level down.
+      - name: Package both
+        working-directory: apps/extension
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          (cd dist && zip -r -q "../opentabs-chromium-${VERSION}.zip" .)
+          (cd dist-firefox && zip -r -q "../opentabs-firefox-${VERSION}.zip" .)
+          ls -la ./*.zip
+
+      - name: Create or update the Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # workflow_dispatch has no tag of its own; fall back to the version
+          # so a manual run still lands somewhere sensible.
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', env.VERSION) }}
+          name: OpenTabs ${{ github.ref_type == 'tag' && github.ref_name || env.VERSION }}
+          # A hyphenated tag (v0.1.0-rc.1) is a build to hand round for
+          # checking, not the version anyone should install by accident.
+          # GitHub keeps a pre-release out of the "Latest" slot and labels it.
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
+          body: |
+            ### Try it before any store catches up
+
+            These are the bytes, installable now.
+
+            **Chrome / Edge** — unzip `opentabs-chromium-${{ env.VERSION }}.zip`, open
+            `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**,
+            then **Load unpacked** and pick the folder.
+
+            **Firefox** — open `about:debugging#/runtime/this-firefox`, click
+            **Load Temporary Add-on**, and pick any file inside the unzipped
+            `opentabs-firefox-${{ env.VERSION }}.zip`. Temporary add-ons are removed
+            when Firefox restarts.
+
+            Then open a new tab. Your open tabs are grouped already — everything above
+            them is optional, and off until you turn it on. Nothing about you is stored
+            anywhere but your own browser.
+
+            Packs, themes and the rest: <https://market.opentabs.app>
+          files: |
+            apps/extension/opentabs-chromium-${{ env.VERSION }}.zip
+            apps/extension/opentabs-firefox-${{ env.VERSION }}.zip
