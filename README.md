@@ -56,7 +56,8 @@ chrome.alarms ─► service worker ─► fetch → tabs-core.wasm → rank
 ```
 
 All the work happens where nobody is waiting. The new tab page ships **no
-wasm, makes no network request, and is 4 KB gzipped** — asserted in
+wasm, makes no network request, and ships 19 KB gzipped** — markup, styles
+and script together — asserted in
 `apps/extension/test/budget.test.ts`, so it stays that way.
 
 ## Quick start

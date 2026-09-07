@@ -17,3 +17,7 @@ serde_json = { workspace = true }
 wasm-bindgen = { workspace = true }
 serde-wasm-bindgen = { workspace = true }
 console_error_panic_hook = { workspace = true }
+
+[dev-dependencies]
+# The inspect example fetches real feeds; nothing in the library does.
+ureq = { workspace = true }

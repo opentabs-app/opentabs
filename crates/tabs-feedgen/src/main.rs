@@ -30,9 +30,14 @@ fn now() -> u64 {
         .unwrap_or(0)
 }
 
-/// The OpenApps app catalogue — the release valve. Editing this and re-running
-/// makes a new product appear on every user's new tab within a day, with no
-/// extension update and no store review.
+/// The app catalogue — the release valve. Editing this and re-running makes a
+/// new product appear on every user's new tab within a day, with no extension
+/// update and no store review.
+///
+/// Products only. The accounts service used to be listed here as "OpenApps
+/// ID — Account and credits", which put the platform's name on a page people
+/// see fifty times a day, next to three things they might actually open. It
+/// is not an app to discover, and signing in is a button in the masthead.
 fn catalogue() -> serde_json::Value {
     json!({
         "generated_at": now(),
@@ -42,9 +47,7 @@ fn catalogue() -> serde_json::Value {
             { "id": "openpdfedit","name": "OpenPDFEdit","url": "https://app.openpdfedit.com/",
               "tagline": "Edit PDFs in the browser" },
             { "id": "opencapture","name": "OpenCapture","url": "https://opencapture.app/",
-              "tagline": "Full-page screenshots" },
-            { "id": "openapps",   "name": "OpenApps ID","url": "https://auth.opentabs.app/",
-              "tagline": "Account and credits" }
+              "tagline": "Full-page screenshots" }
         ]
     })
 }

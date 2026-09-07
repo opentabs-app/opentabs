@@ -1215,8 +1215,18 @@ function drawShareRow() {
     );
     return;
   }
+  // Two groups can carry the same name — the crypto tickers and a crypto
+  // news topic both arrive called "Crypto" — and two identical buttons is a
+  // coin toss, not a choice. Only the ambiguous ones get qualified; adding
+  // the type to every button would be noise on the thirteen that are clear.
+  const seen = new Map<string, number>();
   for (const inst of shareable) {
-    const b = el("button", "btn", `Share “${inst.name}”`);
+    seen.set(inst.name, (seen.get(inst.name) ?? 0) + 1);
+  }
+  for (const inst of shareable) {
+    const label =
+      (seen.get(inst.name) ?? 0) > 1 ? `Share “${inst.name}” (${inst.def})` : `Share “${inst.name}”`;
+    const b = el("button", "btn", label);
     b.addEventListener("click", () => openShareDialog(marketDeps(), inst.id));
     row.append(b);
   }
@@ -1281,6 +1291,12 @@ async function main() {
   const target = /^#i=(.+)$/.exec(location.hash);
   if (target) focusInstance(decodeURIComponent(target[1]!));
   window.addEventListener("hashchange", () => {
+    // Both forms, because this page can already be open when the link is
+    // followed. A same-document hash change does not re-run the code above,
+    // so without this the deep link works on a cold load and silently does
+    // nothing on a warm one.
+    const p = /^#pane=([a-z]+)$/.exec(location.hash);
+    if (p && document.getElementById(`pane-${p[1]}`)) showPane(p[1]!);
     const t = /^#i=(.+)$/.exec(location.hash);
     if (t) focusInstance(decodeURIComponent(t[1]!));
   });

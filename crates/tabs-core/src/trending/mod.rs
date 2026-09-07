@@ -75,13 +75,21 @@ pub fn parse(html: &str) -> Vec<Repo> {
                 .unwrap_or(0);
 
             // The first /stargazers link carries the total.
+            //
+            // Read the whole anchor and strip tags, rather than the text
+            // between the tag's `>` and the next `<`. GitHub puts a star
+            // `<svg>` inside the link before the number, so the naive slice
+            // sees only the whitespace between the two elements and gives up
+            // — every repo came back with a total of 0, on a page that shows
+            // the number plainly. The fixture had the digits straight after
+            // the `>`, which is what let it pass for so long.
             let stars_total = block
                 .find("/stargazers")
                 .and_then(|i| {
                     let tail = &block[i..];
-                    let close = tail.find('>')? + 1;
-                    let end = tail[close..].find('<')? + close;
-                    digits(&tail[close..end])
+                    let open_end = tail.find('>')? + 1;
+                    let close = tail[open_end..].find("</a>")? + open_end;
+                    digits(&strip_tags(&tail[open_end..close]))
                 })
                 .unwrap_or(0);
 
@@ -177,5 +185,35 @@ mod tests {
     fn non_repo_links_are_rejected() {
         let junk = r#"<article class="Box-row"><h2><a href="/trending">x</a></h2></article>"#;
         assert!(parse(junk).is_empty(), "owner/name has exactly one slash");
+    }
+
+    /// The star-count markup as GitHub actually serves it, October 2026.
+    ///
+    /// The difference from the hand-written fixture above is one `<svg>`:
+    /// GitHub puts the star icon *inside* the anchor, before the number. The
+    /// parser used to read the text between the anchor's `>` and the next
+    /// `<`, which is the whitespace before that icon — so every repository
+    /// on the real page reported a total of zero while five unit tests
+    /// passed. Found by `examples/inspect.rs` against the live page.
+    #[test]
+    fn the_star_total_survives_an_icon_inside_the_link() {
+        let html = r##"<article class="Box-row">
+          <h2 class="h3 lh-condensed"><a href="/affaan-m/ECC">affaan-m / ECC</a></h2>
+          <p class="col-9 color-fg-muted my-1 pr-4">The agent harness</p>
+          <div class="f6 color-fg-muted mt-2">
+            <span itemprop="programmingLanguage">JavaScript</span>
+            <a href="/affaan-m/ECC/stargazers" class="Link Link--muted d-inline-block"><svg aria-label="star" role="img" height="16" viewBox="0 0 16 16" class="octicon octicon-star"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612Z"></path></svg>
+              251,687
+            </a>
+            <span class="d-inline-block float-sm-right">1,485 stars today</span>
+          </div>
+        </article>"##;
+        let r = parse(html);
+        assert_eq!(r.len(), 1);
+        assert_eq!(
+            r[0].stars_total, 251_687,
+            "the icon must not swallow the count"
+        );
+        assert_eq!(r[0].stars_today, 1_485);
     }
 }
