@@ -1082,6 +1082,7 @@ dependencies = [
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
+ "ureq",
  "wasm-bindgen",
 ]
 

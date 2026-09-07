@@ -9,7 +9,7 @@
  *
  * Run against `dist/`, so `npm run build` must precede `npm test` in CI.
  */
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -29,6 +29,33 @@ describe.runIf(built)("paint-path budgets", () => {
     const src = read("newtab.js");
     expect(src).not.toMatch(/\bfetch\(/);
     expect(src).not.toMatch(/XMLHttpRequest/);
+  });
+
+  /**
+   * The claim on the website is about the *page*, not about one file.
+   *
+   * `newtab.js` alone was 10.9 KB gzipped while the README, the site and its
+   * structured data all said "4 KB gzipped" — a figure that had been true of
+   * something once and was off by five times by the time anyone checked. The
+   * page also pulls its markup, its stylesheet and two shared chunks, and a
+   * reader counting bytes counts all of them.
+   *
+   * So the cap is on everything the new tab loads, and the number in the
+   * documentation is this number.
+   */
+  it("everything the new tab loads stays under 25 KB gzipped", () => {
+    const files = [
+      resolve(dist, "newtab.html"),
+      resolve(dist, "newtab.js"),
+      ...readdirSync(resolve(dist, "assets"))
+        .filter((f) => f === "main.css")
+        .map((f) => resolve(dist, "assets", f)),
+      ...readdirSync(resolve(dist, "chunks")).map((f) => resolve(dist, "chunks", f)),
+    ];
+    const total = files.reduce((n, f) => n + gzipSync(readFileSync(f)).length, 0);
+    // 19.3 KB today. The cap is close enough to notice a library arriving and
+    // far enough not to fail on a paragraph of copy.
+    expect(total, `paint path is ${(total / 1024).toFixed(1)} KB gzipped`).toBeLessThan(25 * 1024);
   });
 
   it("the new tab bundle stays under 15 KB gzipped", () => {

@@ -16,7 +16,7 @@
 
 use super::Item;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RankOpts {
@@ -233,7 +233,64 @@ pub fn rank(items: &[Item], opts: &RankOpts, now: i64) -> Vec<Ranked> {
         }
     }
 
-    out.truncate(opts.limit);
+    diversify(out, opts.limit)
+}
+
+/**
+ * Take the best `limit`, but do not let one source take all of them.
+ *
+ * Found by `examples/inspect.rs` against live feeds. arXiv's cs.LG feed
+ * publishes its whole day in one batch: 228 of 279 items, every one stamped
+ * within the same hour, every one scoring identically. It took all twelve
+ * slots, and Hacker News, The Verge and the BBC — fifty-one items between
+ * them — showed nothing at all. Pure score ordering is exactly right for
+ * sources that publish continuously and exactly wrong for one that publishes
+ * in bulk, and a reader who adds a paper feed to a news topic does not
+ * expect the news to vanish.
+ *
+ * The cap is a share of the limit rather than a constant, so it scales with
+ * how many sources are actually present, and a single-source topic is
+ * unaffected — with one binding the cap is the whole limit, which is the
+ * behaviour that existed before.
+ *
+ * Anything skipped is kept and used to fill the shortfall, so a quiet source
+ * never costs a slot: capping must not leave the card emptier than it was.
+ */
+fn diversify(ranked: Vec<Ranked>, limit: usize) -> Vec<Ranked> {
+    if limit == 0 || ranked.len() <= limit {
+        return ranked;
+    }
+    let bindings: HashSet<&str> = ranked.iter().map(|r| r.item.binding.as_str()).collect();
+    if bindings.len() < 2 {
+        let mut out = ranked;
+        out.truncate(limit);
+        return out;
+    }
+    let cap = limit.div_ceil(bindings.len()).max(1);
+
+    let mut taken: HashMap<String, usize> = HashMap::new();
+    let mut out: Vec<Ranked> = Vec::with_capacity(limit);
+    let mut deferred: Vec<Ranked> = Vec::new();
+
+    for r in ranked {
+        if out.len() == limit {
+            break;
+        }
+        let n = taken.entry(r.item.binding.clone()).or_insert(0);
+        if *n < cap {
+            *n += 1;
+            out.push(r);
+        } else {
+            deferred.push(r);
+        }
+    }
+    // Still in score order, because `deferred` preserved it.
+    for r in deferred {
+        if out.len() == limit {
+            break;
+        }
+        out.push(r);
+    }
     out
 }
 
@@ -241,6 +298,53 @@ pub fn rank(items: &[Item], opts: &RankOpts, now: i64) -> Vec<Ranked> {
 mod tests {
     use super::*;
     const NOW: i64 = 1_788_048_000;
+
+    /// Distinct nouns rather than a shared phrase plus a number:
+    /// `title_key` drops words of two characters or fewer, so "Paper 7" and
+    /// "Paper 8" are one story as far as dedupe is concerned — which is
+    /// correct, and made an earlier version of these tests meaningless.
+    const TOPICS: [&str; 40] = [
+        "clustering",
+        "transformers",
+        "nanopores",
+        "hypergraphs",
+        "reactors",
+        "peptides",
+        "trajectories",
+        "recommendation",
+        "estimation",
+        "molecules",
+        "operators",
+        "diffusion",
+        "kernels",
+        "embeddings",
+        "attention",
+        "quantisation",
+        "distillation",
+        "retrieval",
+        "segmentation",
+        "forecasting",
+        "alignment",
+        "tokenisers",
+        "schedulers",
+        "curvature",
+        "manifolds",
+        "sparsity",
+        "calibration",
+        "robustness",
+        "pruning",
+        "routing",
+        "compression",
+        "normalisation",
+        "augmentation",
+        "contrastive",
+        "autoencoders",
+        "graphlets",
+        "simplices",
+        "wavelets",
+        "copulas",
+        "bandits",
+    ];
 
     fn item(title: &str, url: &str, source: &str, age_h: i64) -> Item {
         Item {
@@ -492,5 +596,124 @@ mod tests {
     #[test]
     fn empty_input_is_empty_output_not_a_panic() {
         assert!(rank(&[], &RankOpts::default(), NOW).is_empty());
+    }
+
+    /// One bulk publisher must not take every slot.
+    ///
+    /// Found against live feeds: arXiv's cs.LG feed posts its whole day at
+    /// once, so 228 items shared one timestamp and one score and filled all
+    /// twelve slots, while Hacker News, The Verge and the BBC showed nothing.
+    #[test]
+    fn a_bulk_source_cannot_crowd_out_every_other_one() {
+        let mut items = Vec::new();
+        for (n, w) in TOPICS.iter().enumerate() {
+            let mut i = item(
+                &format!("Learning {w} with deep networks"),
+                &format!("https://arxiv.org/abs/{n}"),
+                "arxiv.org",
+                1,
+            );
+            i.binding = "arxiv".into();
+            items.push(i);
+        }
+        for (n, (title, host, binding)) in [
+            ("A news story", "bbc.co.uk", "bbc"),
+            ("Another news story", "theverge.com", "verge"),
+            ("A third news story", "news.ycombinator.com", "hn"),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let mut i = item(title, &format!("https://{host}/{n}"), host, 2);
+            i.binding = binding.into();
+            items.push(i);
+        }
+
+        let opts = RankOpts {
+            half_life_hours: 12.0,
+            limit: 12,
+            ..Default::default()
+        };
+        let out = rank(&items, &opts, NOW);
+        assert_eq!(out.len(), 12, "the card must still be full");
+
+        let arxiv = out.iter().filter(|r| r.item.binding == "arxiv").count();
+        assert!(arxiv < 12, "arxiv took every slot: {arxiv}");
+        // Four bindings, twelve slots — three each, and the three news items
+        // are all that the other bindings have to offer.
+        assert_eq!(arxiv, 9);
+        for b in ["bbc", "verge", "hn"] {
+            assert!(
+                out.iter().any(|r| r.item.binding == b),
+                "{b} was crowded out entirely"
+            );
+        }
+    }
+
+    /// A topic with one source is not a diversity problem, and capping it
+    /// would just show the reader less.
+    #[test]
+    fn a_single_source_topic_is_untouched() {
+        let items: Vec<Item> = TOPICS
+            .iter()
+            .take(30)
+            .enumerate()
+            .map(|(n, w)| {
+                let mut i = item(
+                    &format!("A report on {w}"),
+                    &format!("https://example.test/{n}"),
+                    "example.test",
+                    n as i64,
+                );
+                i.binding = "only".into();
+                i
+            })
+            .collect();
+        let opts = RankOpts {
+            half_life_hours: 12.0,
+            limit: 10,
+            ..Default::default()
+        };
+        let out = rank(&items, &opts, NOW);
+        assert_eq!(out.len(), 10);
+        assert!(out.iter().all(|r| r.item.binding == "only"));
+        // And still in score order, newest first.
+        let ages: Vec<i64> = out.iter().map(|r| r.item.published).collect();
+        let mut sorted = ages.clone();
+        sorted.sort_by(|a, b| b.cmp(a));
+        assert_eq!(ages, sorted, "capping must not disturb the ordering");
+    }
+
+    /// The cap redistributes rather than shrinking the result.
+    #[test]
+    fn a_quiet_source_does_not_cost_a_slot() {
+        let mut items = Vec::new();
+        for (n, w) in TOPICS.iter().take(20).enumerate() {
+            let mut i = item(
+                &format!("Everything about {w}"),
+                &format!("https://a.test/{n}"),
+                "a.test",
+                1,
+            );
+            i.binding = "loud".into();
+            items.push(i);
+        }
+        let mut quiet = item("Quiet one", "https://b.test/1", "b.test", 1);
+        quiet.binding = "quiet".into();
+        items.push(quiet);
+
+        let opts = RankOpts {
+            half_life_hours: 12.0,
+            limit: 10,
+            ..Default::default()
+        };
+        let out = rank(&items, &opts, NOW);
+        assert_eq!(
+            out.len(),
+            10,
+            "the shortfall must be filled, not left empty"
+        );
+        assert_eq!(out.iter().filter(|r| r.item.binding == "quiet").count(), 1);
+        assert_eq!(out.iter().filter(|r| r.item.binding == "loud").count(), 9);
     }
 }

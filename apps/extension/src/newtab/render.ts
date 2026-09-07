@@ -682,6 +682,27 @@ export function renderStatus(inst: Instance, rows: { name: string; indicator: st
   return root;
 }
 
+/**
+ * A card that says this group could not be drawn.
+ *
+ * Shown instead of the group when its renderer throws. The alternative — the
+ * behaviour this replaced — was that the whole page went blank, because one
+ * exception aborted the loop that builds every card. A reader cannot tell a
+ * blank new tab from a broken extension, and neither can a bug report.
+ */
+export function renderFailed(inst: Instance): HTMLElement {
+  const { root, body } = card(inst.name || inst.def);
+  body.append(
+    el(
+      "div",
+      "empty",
+      "This group could not be drawn. The rest of the page is unaffected — " +
+        "open Settings to check its options, or remove it.",
+    ),
+  );
+  return root;
+}
+
 export function renderTrending(inst: Instance, repos: { repo: string; url: string; language?: string; stars_today: number; description?: string }[]): HTMLElement {
   const { root, body } = card(inst.name);
   if (!repos?.length) {

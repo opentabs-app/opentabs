@@ -16,7 +16,8 @@ import type { Config, LocalState, Payloads } from "../lib/types";
 import { makeArrangeable, packGrid, watchGrid, type Span } from "./layout";
 import {
   markBookmarked, renderApps, renderBookmarks, renderCalendar, renderFocus, renderScratch,
-  renderStatus, renderTabs, renderTickers, renderTodos, renderTopic, renderTrending,
+  renderFailed, renderStatus, renderTabs, renderTickers, renderTodos, renderTopic,
+  renderTrending,
   renderWeather, renderXSearch,
 } from "./render";
 
@@ -119,6 +120,15 @@ async function main() {
     const data = p?.data as never;
     let node: HTMLElement | null = null;
 
+    // Wrapped, because a renderer that throws used to abort the whole loop:
+    // one malformed payload produced a *completely blank page*, every other
+    // group gone, with nothing on screen to say why. Found while seeding
+    // screenshot fixtures with the wrong shape — which is what a half-written
+    // storage value, or data from a version one schema ahead, looks like.
+    //
+    // A group that cannot render is one group's problem. The page is not
+    // allowed to make it everybody's.
+    try {
     switch (inst.def) {
       // Local groups always render — they have no freshness to lose.
       case "focus": node = renderFocus(inst, local, saveLocal); break;
@@ -164,6 +174,10 @@ async function main() {
         break;
       default: node = null;
     }
+    } catch (e) {
+      console.error(`OpenTabs: the ${inst.def} group failed to render`, e);
+      node = renderFailed(inst);
+    }
     if (node) {
       makeArrangeable(node, inst.id, {
         span: inst.opts.span as Span | undefined,
@@ -183,7 +197,9 @@ async function main() {
 
   const tabsPayload = payloads["tabs"]?.data as { total?: number } | undefined;
   if (tabsPayload?.total !== undefined) {
-    document.getElementById("tabcount")!.textContent = `${tabsPayload.total} tabs`;
+    // "1 tabs" on a page somebody opens fifty times a day.
+    const n = tabsPayload.total;
+    document.getElementById("tabcount")!.textContent = `${n} ${n === 1 ? "tab" : "tabs"}`;
   }
 
   // Tab state changes constantly; ask for a re-group after paint so the

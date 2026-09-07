@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenTabs — your open tabs, grouped, on every new tab</title>
-<meta name="description" content="A new tab page that shows the tabs you already have open, grouped by site and closable, above a briefing you choose. Paints in 4 KB with no network request. Free, no account, open source." />
+<meta name="description" content="A new tab page that shows the tabs you already have open, grouped by site and closable, above a briefing you choose. Paints in 19 KB with no network request. Free, no account, open source." />
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 <meta name="theme-color" content="#101014" />
 
@@ -73,7 +73,7 @@
     {
       "@type": "Question",
       "name": "How fast is the new tab page?",
-      "acceptedAnswer": { "@type": "Answer", "text": "It ships about 4 KB gzipped, loads no WebAssembly and makes no network request when it opens. All fetching, parsing and ranking happens in the background service worker beforehand, so opening a tab is a single read from local storage followed by a paint." }
+      "acceptedAnswer": { "@type": "Answer", "text": "It ships about 19 KB gzipped \u2014 markup, styles and script together \u2014 loads no WebAssembly and makes no network request when it opens. All fetching, parsing and ranking happens in the background service worker beforehand, so opening a tab is a single read from local storage followed by a paint." }
     },
     {
       "@type": "Question",
@@ -276,7 +276,8 @@
           new tab opens ─────────────►  read once, paint. done.</pre>
     <p style="margin-top:14px; font-size:0.93rem;">
       All the work happens where nobody is waiting. The page itself ships about
-      <strong style="color:var(--strong)">4&nbsp;KB gzipped</strong>, loads no WebAssembly,
+      <strong style="color:var(--text-strong)">19&nbsp;KB gzipped</strong> — markup,
+      styles and script together — loads no WebAssembly,
       and makes no network request when it opens — a budget the test suite enforces, so it
       stays true as the product grows.
     </p>
