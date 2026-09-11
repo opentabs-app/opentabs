@@ -11,12 +11,17 @@ crates/tabs-core      pure Rust — parsing, ranking, grouping, dates. native + 
 crates/tabs-feedgen   the daily feeds: two static files, no database
 crates/tabs-market    the marketplace's ranking, moderation and privacy core
 apps/extension        MV3 extension (Chrome + Firefox), vanilla TS
-apps/marketplace      the pack marketplace, a static site
 apps/market-api       the marketplace API: axum + SQLite, one binary
-apps/site             opentabs.app itself
-deploy/               nginx, Docker and the runbook — see deploy/DEPLOY.md
+deploy/               the market API's Docker and nginx pieces
 docs/config.schema.json  the published config schema
 ```
+
+The website — opentabs.app, market.opentabs.app, and the deploy scripts and
+nginx configs that serve them — is not here. It is private, at
+`opentabs-app/opentabs-website`, checked out beside this repo as
+`openapps/opentabs-website/`. This repository is the extension and the market
+API, and nothing a visitor to the site reads.
+
 
 ## Where it runs
 
@@ -30,7 +35,8 @@ Signing in is optional and buys exactly two things: publishing a pack, and
 liking one. It is never used to store your configuration, which lives in your
 own browser profile and nowhere else.
 
-`deploy/DEPLOY.md` is the runbook.
+The runbook is `DEPLOY.md` in the private site repo, `../opentabs-website/`;
+the API's own steps run from this repo's clone on the server.
 
 ## Three properties, in priority order
 
