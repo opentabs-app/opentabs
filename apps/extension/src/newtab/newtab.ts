@@ -9,7 +9,7 @@
  * The one exception is the to-do date parser, which is asked of the worker
  * over a message rather than done here.
  */
-import { ext, KEY, getLocal, getSync, setLocal } from "../lib/ext";
+import { ext, isFirefox, KEY, getLocal, getSync, setLocal } from "../lib/ext";
 import { OPENAPPS_MATCH } from "../lib/openapps";
 import { applyTheme } from "../lib/theme";
 import type { Config, LocalState, Payloads } from "../lib/types";
@@ -98,6 +98,7 @@ async function main() {
   document.getElementById("packs")?.addEventListener("click", () => {
     void ext.tabs.create({ url: ext.runtime.getURL("settings.html#pane=market") });
   });
+  setupProfiles(cfg?.show_profile_picker !== false);
 
   const saveLocal = (s: LocalState) => {
     void setLocal(KEY.local, s);
@@ -328,4 +329,71 @@ function setupAccount() {
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) void ask();
   });
+}
+
+/**
+ * One click to the browser's profile picker.
+ *
+ * The nearest thing to switching profiles an extension is allowed to do.
+ * Measured, not assumed: `chrome.profiles` and `chrome.users` are both
+ * `undefined`, and `chrome.windows.create({ profileName })` is rejected with
+ * "Unexpected property" — so naming a profile and going there is not on the
+ * table. `chrome://profile-picker` is, and Edge aliases the `chrome:` form to
+ * its own `edge://`, so one URL covers both.
+ *
+ * That still removes the slow half. What costs time is finding the right
+ * profile in the avatar menu, not the click that follows it.
+ *
+ * The button ships hidden and is revealed here, so a build whose script never
+ * runs shows nothing rather than something inert. Firefox is skipped outright
+ * — it has no equivalent page.
+ *
+ * The Firefox check is a guess, though, and every guess of this kind ages:
+ * the one that used to answer it started reporting Firefox on Chrome when
+ * Chromium began defining a `browser` global. So the click is the real test.
+ * Whether a given build lets an extension open the picker cannot be known
+ * without asking it, and a refusal takes the button away and says why rather
+ * than failing silently — which is the shape this feature would otherwise
+ * fail in, since nothing visible happens either way.
+ */
+function setupProfiles(wanted: boolean): void {
+  const button = document.getElementById("profiles");
+  // Off in Settings: stay hidden, which is how the button ships. Nothing to
+  // undo, and no flash of a control that is about to disappear.
+  if (!button || isFirefox || !wanted) return;
+  button.hidden = false;
+
+  button.addEventListener("click", () => {
+    void ext.tabs.create({ url: "chrome://profile-picker" }).catch(() => {
+      button.hidden = true;
+      note(button, "This browser will not let an extension open the profile picker. Use the avatar button in the toolbar.");
+    });
+  });
+}
+
+/** A small anchored line of text. Shares the bookmark popover's styling
+ *  rather than inventing a second one that looks almost the same. */
+function note(anchor: HTMLElement, text: string): void {
+  document.querySelector(".bmpop")?.remove();
+  const pop = document.createElement("div");
+  pop.className = "bmpop";
+  const line = document.createElement("span");
+  line.className = "bmpop-t";
+  line.textContent = text;
+  pop.append(line);
+  const box = anchor.getBoundingClientRect();
+  pop.style.top = `${box.bottom + window.scrollY + 6}px`;
+  // Right-aligned to the button: it sits at the end of the masthead, and a
+  // left-aligned popover there would hang off the edge of the window.
+  pop.style.left = `${Math.max(8, box.right + window.scrollX - 210)}px`;
+  document.body.append(pop);
+  const close = () => {
+    pop.remove();
+    document.removeEventListener("click", outside, true);
+  };
+  const outside = (e: Event) => {
+    if (!pop.contains(e.target as Node)) close();
+  };
+  setTimeout(() => document.addEventListener("click", outside, true), 0);
+  setTimeout(close, 8000);
 }

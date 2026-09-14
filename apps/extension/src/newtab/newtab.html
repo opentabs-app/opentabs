@@ -20,6 +20,27 @@
       <div class="masthead-right">
         <span class="datel mono" id="tabcount"></span>
         <!--
+          Switching Chrome profiles, in one click instead of three.
+
+          There is no profile API — `chrome.profiles` and `chrome.users` do
+          not exist, and `windows.create` rejects a `profileName` outright —
+          so this cannot jump to a named profile. What it can do is open the
+          browser's own picker, which is the slow half: finding the profile in
+          a menu, rather than the click that follows.
+
+          Starts hidden and is shown only where it works. Firefox has no such
+          page, and a button that does nothing is worse than no button.
+        -->
+        <button class="iconbtn" id="profiles" title="Switch profile" aria-label="Switch profile" hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </button>
+        <!--
           The marketplace, named and marked rather than hidden behind a
           settings pane nobody opens. It carries the product's own tile so
           the packs read as part of OpenTabs and not somewhere else you are

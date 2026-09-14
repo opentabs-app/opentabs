@@ -40,6 +40,10 @@ export interface Config {
   /** Installed from a pack, or built in Settings. Part of the config document
    *  so it travels with everything else when the string is copied (D4). */
   custom_theme?: Theme | null;
+  /** The masthead's "switch profile" button. Absent means shown. Mirrors
+   *  `tabs_core::config::Config::show_profile_picker`, which is what keeps it
+   *  alive across a migration — see the comment there. */
+  show_profile_picker?: boolean;
 }
 
 export interface FeedItem {

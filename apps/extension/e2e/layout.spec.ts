@@ -458,7 +458,12 @@ test("the new tab offers to sign in, and claims no account until there is one", 
   await expect(page.locator("#accountdot")).toBeHidden();
 
   // It sits with the other masthead controls, not somewhere of its own.
-  await expect(page.locator(".masthead-right .iconbtn")).toHaveCount(2);
+  //
+  // Asserted by where it is rather than by how many icons stand beside it.
+  // This counted two until the profile-picker button made three, and a test
+  // that has to be edited every time the masthead gains a control was never
+  // really checking the thing its comment claims.
+  await expect(page.locator(".masthead-right #account")).toHaveCount(1);
 });
 
 test("the new tab names the marketplace, and lands on its pane", async ({
@@ -506,4 +511,59 @@ test("opening the new tab still costs no network request", async ({ context, ext
   await page.waitForSelector(".card");
   await page.waitForTimeout(500);
   expect(external, `the new tab fetched: ${external.join(", ")}`).toEqual([]);
+});
+
+test("closing a tab from the card updates every count that claims to know", async ({
+  context,
+  extensionId,
+}) => {
+  // Three on one host, so the group survives losing one and its own number
+  // has to change too.
+  for (const u of ["https://example.com/a", "https://example.com/b", "https://example.com/c"]) {
+    const p = await context.newPage();
+    await p.goto(u, { waitUntil: "domcontentloaded" }).catch(() => {});
+  }
+
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/newtab.html`);
+  const card = page.locator('.card[data-id="tabs"]');
+  await expect(card).toBeVisible({ timeout: 15_000 });
+
+  const group = card.locator(".tabgroup", { hasText: "example.com" });
+  await expect(group.locator(".tabgroup-n")).toHaveText("3", { timeout: 15_000 });
+
+  const before = Number((await card.locator(".card-count").textContent())!.replace(/\D/g, ""));
+  const masthead = page.locator("#tabcount");
+  await expect(masthead).toContainText(String(before));
+
+  // Close one row.
+  const row = group.locator(".tablink").first();
+  await row.hover();
+  await row.locator(".x").click();
+
+  // The row going is not the point — the numbers are. Before this, the row
+  // vanished and "N open" sat there contradicting it until a reload.
+  await expect(group.locator(".tablink")).toHaveCount(2);
+  await expect(group.locator(".tabgroup-n")).toHaveText("2");
+  await expect(card.locator(".card-count")).toHaveText(`${before - 1} open`);
+  await expect(masthead).toHaveText(`${before - 1} tabs`);
+});
+
+test("closing a whole group takes its tabs out of the total", async ({ context, extensionId }) => {
+  for (const u of ["https://example.org/a", "https://example.org/b"]) {
+    const p = await context.newPage();
+    await p.goto(u, { waitUntil: "domcontentloaded" }).catch(() => {});
+  }
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/newtab.html`);
+  const card = page.locator('.card[data-id="tabs"]');
+  const group = card.locator(".tabgroup", { hasText: "example.org" });
+  await expect(group.locator(".tabgroup-n")).toHaveText("2", { timeout: 15_000 });
+
+  const before = Number((await card.locator(".card-count").textContent())!.replace(/\D/g, ""));
+  await group.hover();
+  await group.locator(".closeall").click();
+
+  await expect(group).toHaveCount(0);
+  await expect(card.locator(".card-count")).toHaveText(`${before - 2} open`);
 });

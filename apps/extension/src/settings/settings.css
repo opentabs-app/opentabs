@@ -168,9 +168,10 @@ pre.probe:empty { display: none; }
    accent, so a primary button stays the loudest thing on the page.
 
    `--app-opentabs` is declared here rather than in the token files so a
-   token refresh cannot silently drop it. `--blue` is #15b9eb, which is
-   already exactly the colour of the mark. */
-:root { --app-opentabs: var(--blue, #15b9eb); }
+   token refresh cannot silently drop it. It is slot 22 (`--slate`) as of
+   8 September 2026; it was `--blue`, which is slot 2 and belongs to openinbox
+   and the shipped opencapture. See tokens/ACCENT-SLOTS.md. */
+:root { --app-opentabs: var(--accent-22, #548994); }
 
 h1.brand { display: flex; align-items: center; gap: 9px; margin: 0; }
 .brand-tile {
@@ -190,3 +191,17 @@ h1.brand { display: flex; align-items: center; gap: 9px; margin: 0; }
    which is a worse answer to "how do I add to the marketplace". */
 .sharerow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .sharerow .hint { width: 100%; margin: 0; }
+
+/* The Web Apps picker. A tick per app in the suite, then the reader's own.
+   Rows rather than a grid: the addresses are long and wrap badly in columns. */
+.applist { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.approw { display: flex; align-items: center; gap: 8px; }
+.approw .hint { margin: 0; }
+/* The address is the part that can outgrow the pane, so it is the part that
+   gets to shrink and ellipsise. */
+.approw > .hint { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.approw > .btn { flex: 0 0 auto; }
+.approw-add { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.approw-add input { min-width: 0; }
+.approw-add input:first-child { flex: 0 1 9rem; }
+.approw-add input[type="url"] { flex: 1 1 auto; }

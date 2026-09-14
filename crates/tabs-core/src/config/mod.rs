@@ -76,6 +76,19 @@ pub struct Config {
     /// travel with it would be the one thing that did not.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub custom_theme: Option<crate::pack::Theme>,
+    /// Whether the new tab's masthead shows the "switch profile" button.
+    ///
+    /// On unless someone turns it off, so a config written before this field
+    /// existed keeps showing the button it always showed.
+    ///
+    /// It has to be declared here and not only in the extension's TypeScript.
+    /// This struct has no catch-all, so serde drops any key it does not name —
+    /// and `migrateConfig` runs every stored config through it. A TS-only
+    /// field survives an ordinary load only because the worker writes back
+    /// just when the version changes; the next schema migration would have
+    /// silently switched the button back on for everyone who had hidden it.
+    #[serde(default = "yes")]
+    pub show_profile_picker: bool,
 }
 
 /// The five query templates, verified live against each endpoint. `{q}` is
@@ -242,6 +255,7 @@ pub fn default_config() -> Config {
         theme: "auto".into(),
         assistant: "claude".into(),
         custom_theme: None,
+        show_profile_picker: true,
         instances: vec![
             Instance {
                 def: "tabs".into(),
@@ -474,6 +488,13 @@ pub fn migrate(stored: &Value) -> Config {
                 custom_theme: stored
                     .get("custom_theme")
                     .and_then(|v| serde_json::from_value(v.clone()).ok()),
+                // Carried across the rebuild like theme and assistant. Only an
+                // explicit `false` hides the button; anything absent or
+                // malformed keeps the default a reader has always seen.
+                show_profile_picker: stored
+                    .get("show_profile_picker")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(true),
             }
         }
     };
@@ -535,6 +556,30 @@ pub fn migrate(stored: &Value) -> Config {
 
 #[cfg(test)]
 mod tests {
+
+    /// The regression this field was nearly: a key serde does not name is a
+    /// key `migrate` quietly deletes.
+    #[test]
+    fn migration_keeps_the_profile_picker_choice() {
+        let off = serde_json::json!({
+            "version": CURRENT_VERSION, "instances": [], "theme": "dark",
+            "assistant": "claude", "show_profile_picker": false
+        });
+        assert!(!migrate(&off).show_profile_picker);
+
+        // Through the rebuild path too, which reconstructs the struct by hand.
+        let old = serde_json::json!({ "version": 0, "show_profile_picker": false });
+        assert!(!migrate(&old).show_profile_picker);
+    }
+
+    #[test]
+    fn a_config_from_before_the_field_still_shows_the_button() {
+        let before = serde_json::json!({
+            "version": CURRENT_VERSION, "instances": [], "theme": "auto", "assistant": "claude"
+        });
+        assert!(migrate(&before).show_profile_picker);
+        assert!(default_config().show_profile_picker);
+    }
     use super::*;
 
     #[test]
