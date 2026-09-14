@@ -182,6 +182,33 @@ export function renderTabs(inst: Instance, g: Grouping): HTMLElement {
   const { root, body } = card(inst.name, `${g.total} open`);
   root.classList.add("tabs");
 
+  /**
+   * Keep the counts honest after a close.
+   *
+   * Rows are removed from the DOM straight away — waiting for the worker to
+   * re-snapshot would leave a row you just closed sitting there for a beat,
+   * which reads as the click not working. But the *numbers* were left alone,
+   * so "8 open" stayed at 8 after you closed three of them, and so did the
+   * masthead. The card contradicted itself until the page was reloaded.
+   *
+   * The worker does refresh — it listens to `tabs.onRemoved` — but the page
+   * paints once from one storage read and never re-reads. Adding a storage
+   * listener that redraws would fix the number and cost the thing the page
+   * exists for: a redraw mid-typing throws away whatever is in the Focus
+   * input. So the count is adjusted here by exactly what was closed, which
+   * is the same arithmetic the worker will independently arrive at.
+   */
+  let total = g.total;
+  const countEl = root.querySelector(".card-count");
+  const closed = (n: number) => {
+    if (n <= 0) return;
+    total = Math.max(0, total - n);
+    if (countEl) countEl.textContent = `${total} open`;
+    // The masthead reads from the same fact and is just as wrong otherwise.
+    const masthead = document.getElementById("tabcount");
+    if (masthead) masthead.textContent = `${total} ${total === 1 ? "tab" : "tabs"}`;
+  };
+
   // Only offer the merge when there is something to merge — a button that
   // does nothing is worse than no button.
   const windows = new Set(g.groups.flatMap((grp) => grp.tabs.map((t) => t.window_id)));
@@ -215,7 +242,16 @@ export function renderTabs(inst: Instance, g: Grouping): HTMLElement {
           else seen.add(key);
         }
       }
-      if (kill.length) onTabs(ext.tabs.remove(kill));
+      if (kill.length) {
+        onTabs(ext.tabs.remove(kill));
+        closed(kill.length);
+        // The rows themselves belong to whichever groups held them, so they
+        // are dropped by url rather than tracked individually.
+        for (const id of kill) {
+          root.querySelector(`.tablink[data-tab-id="${id}"]`)?.remove();
+        }
+        for (const el of root.querySelectorAll(".tabgroup")) syncGroup(el as HTMLElement);
+      }
       btn.remove();
     });
     root.querySelector(".card-head")?.append(btn);
@@ -238,19 +274,20 @@ export function renderTabs(inst: Instance, g: Grouping): HTMLElement {
     const closeAll = el("button", "closeall", "close all");
     closeAll.addEventListener("click", () => {
       onTabs(ext.tabs.remove(grp.tabs.map((t) => t.id)));
+      closed(grp.tabs.length);
       box.remove();
     });
     head.append(closeAll);
     box.append(head);
 
     const shown = grp.tabs.slice(0, collapseAfter);
-    for (const t of shown) box.append(tabRow(t));
+    for (const t of shown) box.append(tabRow(t, closed));
 
     if (grp.tabs.length > shown.length) {
-      const more = el("button", "tagbroup-more empty", `+${grp.tabs.length - shown.length} more`);
+      const more = el("button", "tabgroup-more empty", `+${grp.tabs.length - shown.length} more`);
       more.addEventListener("click", () => {
         more.remove();
-        for (const t of grp.tabs.slice(collapseAfter)) box.append(tabRow(t));
+        for (const t of grp.tabs.slice(collapseAfter)) box.append(tabRow(t, closed));
       });
       box.append(more);
     }
@@ -276,6 +313,26 @@ function onTabs(p: Promise<unknown>): void {
   void p.catch(() => {
     void ext.runtime.sendMessage({ type: "refreshTabs" }).catch(() => {});
   });
+}
+
+/**
+ * Bring a group's own number back in line with its rows, and take the group
+ * away once it has none.
+ *
+ * Recomputed from the DOM rather than decremented: the number beside a group
+ * name is a claim about the rows directly beneath it, and counting them is
+ * the one way that claim cannot drift. A collapsed group is left alone —
+ * its "+7 more" rows are real tabs that simply are not drawn yet.
+ */
+function syncGroup(group: HTMLElement): void {
+  const rows = group.querySelectorAll(".tablink").length;
+  const hidden = group.querySelector(".tabgroup-more");
+  if (rows === 0 && !hidden) {
+    group.remove();
+    return;
+  }
+  const n = group.querySelector(".tabgroup-n");
+  if (n && !hidden) n.textContent = String(rows);
 }
 
 /**
@@ -311,10 +368,15 @@ export function bookmarkable(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
 
-function tabRow(t: Grouping["groups"][number]["tabs"][number]): HTMLElement {
+function tabRow(
+  t: Grouping["groups"][number]["tabs"][number],
+  closed: (n: number) => void = () => {},
+): HTMLElement {
   const a = el("a", "tablink") as HTMLAnchorElement;
   a.href = t.url;
   a.dataset.url = t.url;
+  // So a bulk close can find the row it just closed.
+  a.dataset.tabId = String(t.id);
   if (t.fav_icon_url) {
     const img = document.createElement("img");
     img.src = t.fav_icon_url;
@@ -403,7 +465,10 @@ function tabRow(t: Grouping["groups"][number]["tabs"][number]): HTMLElement {
     e.preventDefault();
     if (e.target === x) {
       onTabs(ext.tabs.remove(t.id));
+      const group = a.closest(".tabgroup") as HTMLElement | null;
       a.remove();
+      closed(1);
+      if (group) syncGroup(group);
       return;
     }
     // Jump to the existing tab rather than opening a second copy — the

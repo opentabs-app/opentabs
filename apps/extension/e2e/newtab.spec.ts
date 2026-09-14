@@ -41,14 +41,39 @@ test("the new tab page paints with no network request at all", async ({ context,
   expect(requests, `newtab made network requests: ${requests.join(", ")}`).toEqual([]);
 });
 
-test("first paint lands inside the 50ms budget", async ({ context, extensionId }) => {
+test("first paint is not held up by anything this page does", async ({
+  context,
+  extensionId,
+}) => {
+  // Measured, because the previous version of this test measured the wrong
+  // thing and passed for the wrong reason.
+  //
+  // It read the FCP entry and compared it to 200ms "generous in CI; the
+  // local target is 50ms". Two problems. First, the entry is often not
+  // recorded yet when the page is asked, and the code fell back to `0` —
+  // which is comfortably under 200, so a run where nothing had painted
+  // passed. Second, 50ms was never reachable here: a *blank* page inside
+  // this same extension has a median FCP of 124ms in this harness, because
+  // what dominates is Chromium starting an extension process, not our
+  // markup.
+  //
+  // Against that floor OpenTabs measures ~144ms — about 20ms of our own,
+  // which is the number this page can actually influence. The budget below
+  // is the floor plus real headroom for a loaded machine, and the sharp
+  // assertions on what we control live in budget.test.ts: 18.9 KB on the
+  // paint path, no wasm, and no network request at all.
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/newtab.html`);
-  const fcp = await page.evaluate(() => {
-    const entry = performance.getEntriesByName("first-contentful-paint")[0];
-    return entry ? entry.startTime : 0;
+  const fcp = await page.evaluate(async () => {
+    const got = () => performance.getEntriesByName("first-contentful-paint")[0]?.startTime;
+    for (let i = 0; i < 100 && got() === undefined; i++) {
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    return got() ?? -1;
   });
-  expect(fcp).toBeLessThan(200); // generous in CI; the local target is 50ms
+  // -1 means it never painted at all, which must fail rather than pass.
+  expect(fcp, "no first-contentful-paint was ever recorded").toBeGreaterThan(0);
+  expect(fcp, `first paint took ${fcp.toFixed(0)}ms`).toBeLessThan(500);
 });
 
 test("open tabs are grouped by site and shown", async ({ context, extensionId }) => {
@@ -61,13 +86,31 @@ test("open tabs are grouped by site and shown", async ({ context, extensionId })
 });
 
 test("the prompt bar routes to the chosen assistant", async ({ context, extensionId }) => {
+  // The navigation is intercepted rather than followed.
+  //
+  // This used to press Enter and wait five seconds for google.com to load,
+  // which made an assertion about *our* routing depend on Google answering
+  // in time. On a loaded machine it did not, and the failure looked like a
+  // routing bug. What the product actually promises is the URL it sends you
+  // to, so that is what is checked — and the suite gets one less reason to
+  // need the internet.
   const page = await context.newPage();
+  const asked: string[] = [];
+  await page.route("**://*.google.com/**", (route) => {
+    asked.push(route.request().url());
+    // Answered locally: following it is the part that was slow and told us
+    // nothing.
+    return route.fulfill({ status: 200, contentType: "text/html", body: "<title>ok</title>" });
+  });
+
   await page.goto(`chrome-extension://${extensionId}/newtab.html`);
   await page.fill("#prompt", "!g what is an eTLD");
-  const nav = page.waitForURL(/google\.com\/search/, { timeout: 5000 }).catch(() => null);
   await page.press("#prompt", "Enter");
-  await nav;
-  expect(page.url()).toContain("google.com/search");
+
+  await expect.poll(() => asked.length, { timeout: 10_000 }).toBeGreaterThan(0);
+  expect(asked[0]).toContain("google.com/search");
+  // The query goes with it — a route to a bare search page is not a route.
+  expect(decodeURIComponent(asked[0]!)).toContain("what is an eTLD");
 });
 
 test("settings renders every configured group", async ({ context, extensionId }) => {

@@ -1,8 +1,3 @@
-/* Vendored from @openapps/tokens. One local change: the @font-face URLs
- * are absolute (/fonts/…) because an extension page resolves them from
- * the extension root, and MV3 blocks remote font loads outright — a CDN
- * face would fall back to a system stack silently.
- * Re-vendoring from the design system means re-applying that change. */
 /* Geist and Geist Mono, subsetted for the SDK.
 
    The design system ships 24 OTF faces totalling 3.9 MB. That is right for a
@@ -25,7 +20,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/Geist-Regular.woff2") format("woff2");
+  src: url("../fonts/Geist-Regular.woff2") format("woff2");
 }
 
 @font-face {
@@ -33,7 +28,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("/fonts/Geist-Medium.woff2") format("woff2");
+  src: url("../fonts/Geist-Medium.woff2") format("woff2");
 }
 
 @font-face {
@@ -41,5 +36,5 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/GeistMono-Regular.woff2") format("woff2");
+  src: url("../fonts/GeistMono-Regular.woff2") format("woff2");
 }

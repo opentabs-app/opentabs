@@ -40,6 +40,15 @@ pub struct Feed {
     pub items: Vec<Item>,
 }
 
+/// Hosts whose links name the aggregator rather than the publisher, so the
+/// item's `<source>` is the only place the real outlet appears.
+fn is_aggregator(host: &str) -> bool {
+    matches!(
+        host,
+        "news.google.com" | "news.yahoo.com" | "feedproxy.google.com" | "feeds.feedburner.com"
+    )
+}
+
 fn first_text(inner: &str, names: &[&str]) -> Option<String> {
     names.iter().find_map(|n| {
         xml::child(inner, n)
@@ -119,15 +128,28 @@ pub fn parse(doc: &str, binding: &str, fetched_at: i64) -> Feed {
             .and_then(|d| date::parse(&d))
             .unwrap_or(fetched_at);
 
-            // Google News names the publisher in <source>; without it the
-            // whole topic would read as coming from news.google.com.
-            let source = xml::child(e.inner, "source")
-                .map(|s| xml::text(s.inner))
-                .filter(|s| !s.is_empty())
-                .or_else(|| {
-                    crate::url::parse(&url).map(|p| p.host.trim_start_matches("www.").to_string())
-                })
-                .unwrap_or_default();
+            // Where the row says it came from.
+            //
+            // Normally the link's own host, which is what every other row
+            // shows and what makes a column of them scannable.
+            //
+            // `<source>` overrides it only when the link is an aggregator
+            // wrapper — Google News, whose every link is news.google.com, so
+            // without this a whole topic reads as coming from Google. RSS
+            // lets any feed carry `<source>`, and plenty do: The Straits
+            // Times puts "The Straits Times" on every item, which used to
+            // land a publication name in a column of hostnames.
+            let host =
+                crate::url::parse(&url).map(|p| p.host.trim_start_matches("www.").to_string());
+            let is_wrapper = host.as_deref().is_some_and(is_aggregator);
+            let source = match (&host, is_wrapper) {
+                (Some(h), false) => h.clone(),
+                _ => xml::child(e.inner, "source")
+                    .map(|s| xml::text(s.inner))
+                    .filter(|s| !s.is_empty())
+                    .or(host)
+                    .unwrap_or_default(),
+            };
 
             let summary = first_text(e.inner, &["description", "summary", "content"])
                 .map(|s| truncate_words(&s, 40))
@@ -245,5 +267,41 @@ mod tests {
         let x = r#"<rss><channel><item><title>T</title>
             <guid isPermaLink="true">https://a.test/g</guid></item></channel></rss>"#;
         assert_eq!(parse(x, "b", NOW).items[0].url, "https://a.test/g");
+    }
+
+    /// RSS lets any feed carry `<source>`, and plenty of ordinary publishers
+    /// do. The Straits Times puts "The Straits Times" on every item, which
+    /// used to land a publication name in a column of hostnames — one row
+    /// reading differently from every other for no reason a reader could see.
+    #[test]
+    fn an_ordinary_feeds_source_element_does_not_replace_the_host() {
+        let x = r#"<rss><channel><item>
+            <title>Telegram down for thousands in Singapore</title>
+            <link>https://www.straitstimes.com/singapore/telegram-down</link>
+            <source url="https://www.straitstimes.com/rss.xml">The Straits Times</source>
+            <pubDate>Sat, 30 Aug 2026 10:00:00 GMT</pubDate>
+        </item></channel></rss>"#;
+        let f = parse(x, "st", NOW);
+        assert_eq!(f.items[0].source, "straitstimes.com");
+    }
+
+    /// …while an aggregator still shows the outlet, because its own host
+    /// names nobody.
+    #[test]
+    fn an_aggregator_still_shows_the_publisher() {
+        for link in [
+            "https://news.google.com/rss/articles/CBMiVWh0dHBz?oc=5",
+            "https://feeds.feedburner.com/~r/example/~3/abc/story",
+        ] {
+            let x = format!(
+                r#"<rss><channel><item>
+                <title>Story</title><link>{link}</link>
+                <source url="https://reuters.com">Reuters</source>
+                <pubDate>Sat, 30 Aug 2026 10:00:00 GMT</pubDate>
+                </item></channel></rss>"#
+            );
+            let f = parse(&x, "gnews", NOW);
+            assert_eq!(f.items[0].source, "Reuters", "{link}");
+        }
     }
 }

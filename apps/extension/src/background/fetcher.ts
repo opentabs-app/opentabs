@@ -10,6 +10,7 @@
  * anything that looks like a server) must degrade one group, never take down
  * a refresh cycle.
  */
+import { decodeBody } from "../lib/decode";
 import { ext, KEY, getLocal, setLocal } from "../lib/ext";
 
 export interface FetchResult {
@@ -124,7 +125,12 @@ export async function conditionalGet(url: string): Promise<FetchResult> {
       validators[url] = { etag, lastModified };
       await setLocal(KEY.etags, validators);
     }
-    return { ok: true, status: res.status, notModified: false, body: await res.text() };
+    // Bytes, not `res.text()`. That decodes as UTF-8 whenever the header
+    // names no charset, which silently mangles every feed that declares its
+    // encoding inside the document — see lib/decode.ts for the one that
+    // found it.
+    const body = decodeBody(await res.arrayBuffer(), res.headers.get("content-type"));
+    return { ok: true, status: res.status, notModified: false, body };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, status: 0, notModified: false, body: "", error: msg };
