@@ -171,8 +171,13 @@ describe.runIf(built)("manifest", () => {
    * remaining warnings are advisory and stay.
    */
   it("declares a Firefox floor that can actually run the permission model", () => {
+    // The source manifest, not dist-firefox/. The floor is a property of the
+    // file the build copies verbatim, and reading the built copy made this
+    // depend on the Firefox build having run first — which CI's extension job
+    // does *after* `npm test`. It passed locally on a stale dist-firefox and
+    // failed on the first clean checkout.
     const gecko = JSON.parse(
-      readFileSync(resolve(dist.replace(/dist$/, "dist-firefox"), "manifest.json"), "utf8"),
+      readFileSync(resolve(__dirname, "..", "public", "manifest.firefox.json"), "utf8"),
     ).browser_specific_settings.gecko;
     expect(Number(gecko.strict_min_version.split(".")[0])).toBeGreaterThanOrEqual(128);
     expect(gecko.data_collection_permissions).toEqual({ required: ["none"] });
