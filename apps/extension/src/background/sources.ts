@@ -10,6 +10,7 @@
  */
 import { ext, KEY, getLocal, setLocal } from "../lib/ext";
 import type { Binding, Config, FeedItem, Instance, RankedItem, CalEvent } from "../lib/types";
+import { arrangeApps, BUNDLED_APPS, type WebApp } from "../lib/apps";
 import { conditionalGet, forgetValidator, staggered } from "./fetcher";
 import {
   blockedUntil, hostOf, isPushback, noteSuccess, notePushback, pruneCooldowns, pushbackNote,
@@ -630,36 +631,21 @@ export async function refreshStatus() {
   return out;
 }
 
-/**
- * The suite, bundled.
- *
- * The served `apps.json` is the release valve — it makes a new product appear
- * without an extension update — but it must not be a *dependency*. Shipping
- * only the fetch meant Web Apps rendered nothing until the file existed,
- * which is the opposite of the point: this group is the reason someone keeps
- * the extension installed.
- */
-const BUNDLED_APPS = [
-  { id: "opensubs", name: "OpenSubs", url: "https://app.opensubs.app/", tagline: "Subtitles and translation" },
-  { id: "openpdfedit", name: "OpenPDFEdit", url: "https://app.openpdfedit.com/", tagline: "Edit PDFs in the browser" },
-  { id: "opencapture", name: "OpenCapture", url: "https://opencapture.app/", tagline: "Full-page screenshots" },
-  { id: "openapps", name: "OpenApps ID", url: "https://auth.opentabs.app/", tagline: "Account and credits" },
-];
-
 /** Served catalogue when reachable, bundled list otherwise. Never empty. */
-export async function refreshApps() {
+export async function refreshApps(inst: Instance) {
+  let catalogue: WebApp[] = BUNDLED_APPS;
   try {
     if (await has([SITE_MATCH])) {
       const res = await conditionalGet(`${FEEDS_BASE}/apps.json`);
       if (res.ok && res.body) {
         const apps = JSON.parse(res.body).apps;
-        if (Array.isArray(apps) && apps.length > 0) return apps;
+        if (Array.isArray(apps) && apps.length > 0) catalogue = apps;
       }
     }
   } catch {
     /* fall through to the bundled list */
   }
-  return BUNDLED_APPS;
+  return arrangeApps(catalogue, inst.opts);
 }
 
 /**

@@ -75,6 +75,18 @@ button {
 .greeting { font-size: clamp(1.6rem, 3.5vw, 2.1rem); font-weight: 500; letter-spacing: -0.02em; color: var(--text-strong, #020202); margin: 0; }
 .datel { color: var(--text-muted, #7c7c7c); font-size: 0.85rem; margin-top: 2px; }
 .masthead-right { display: flex; align-items: center; gap: 10px; }
+/* `hidden` means hidden, whatever display a class gives the element.
+
+   An author rule outranks the user agent's `[hidden] { display: none }`, so
+   any element carrying a class that sets `display` could never be hidden by
+   the attribute. That has now bitten this stylesheet twice: the account dot,
+   renamed to `acct-dot` to dodge it, and the switch-profile button, whose
+   `.iconbtn { display: grid }` meant it was on screen in every browser from
+   the day it shipped — including Firefox, where it is never revealed and so
+   sat there doing nothing, which is precisely what shipping it hidden was
+   meant to prevent. Renaming around it a third time is how a fourth happens. */
+[hidden] { display: none !important; }
+
 .iconbtn {
   width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center;
   color: var(--text-muted, #7c7c7c);
@@ -94,9 +106,10 @@ button {
    here would be the third icon in a row and read as another setting.
 
    `--app-opentabs` is declared here rather than in the token files so that
-   refreshing them cannot silently drop it. --blue is #15b9eb, already
-   exactly the colour of the mark. */
-:root { --app-opentabs: var(--blue, #15b9eb); }
+   refreshing them cannot silently drop it. It is slot 22 (`--slate`) as of
+   8 September 2026; it was `--blue`, which is slot 2 and belongs to openinbox
+   and the shipped opencapture. See tokens/ACCENT-SLOTS.md. */
+:root { --app-opentabs: var(--accent-22, #548994); }
 .packsbtn {
   display: flex; align-items: center; gap: 6px;
   height: 32px; padding: 0 11px 0 8px; border-radius: 8px;

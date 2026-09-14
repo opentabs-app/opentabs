@@ -9,8 +9,9 @@
  * `chrome.permissions.request()` needs a user gesture — the worker cannot
  * ask, only check.
  */
-import { ext, KEY, getLocal, getSync, setLocal, setSync } from "../lib/ext";
+import { ext, isFirefox, KEY, getLocal, getSync, setLocal, setSync } from "../lib/ext";
 import { SITE_MATCH } from "../lib/openapps";
+import { appKey, BUNDLED_APPS, normaliseUrl, type WebApp } from "../lib/apps";
 import { initMarketPane, openShareDialog, showMarketPane } from "./marketpane";
 import type { Binding, Config, Instance, LocalState } from "../lib/types";
 
@@ -445,8 +446,124 @@ function folderPicker(inst: Instance): HTMLElement {
   return f;
 }
 
+/**
+ * Which web apps the group lists.
+ *
+ * The catalogue is the suite, and it grows — so this stores what the reader
+ * *changed*, not a copy of the list. Unticking hides one; the Add row appends
+ * one of their own. A product shipped next month still turns up, and a
+ * removal still sticks, which a snapshot could not manage at the same time.
+ *
+ * The catalogue is read from the group's own rendered payload rather than
+ * fetched again here: it is whatever the worker last saw, which is exactly
+ * the list the reader is looking at on the new tab page.
+ */
+function appsEditor(inst: Instance): HTMLElement {
+  const box = el("div", "opts");
+  const hidden = new Set<string>(Array.isArray(inst.opts.hidden) ? (inst.opts.hidden as string[]) : []);
+  const custom: WebApp[] = Array.isArray(inst.opts.custom) ? (inst.opts.custom as WebApp[]) : [];
+
+  const commit = () => {
+    inst.opts.hidden = [...hidden];
+    inst.opts.custom = custom;
+    void save(true);
+    void ext.runtime.sendMessage({ type: "refresh" }).catch(() => {});
+  };
+
+  const list = el("div", "applist");
+  box.append(
+    el("div", "hint", "Untick to take one off the card. Anything new in the suite appears here on its own."),
+    list,
+  );
+
+  const draw = (catalogue: WebApp[]) => {
+    list.replaceChildren();
+
+    for (const app of catalogue) {
+      const row = el("label", "inline approw");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !hidden.has(appKey(app));
+      cb.addEventListener("change", () => {
+        if (cb.checked) hidden.delete(appKey(app));
+        else hidden.add(appKey(app));
+        commit();
+      });
+      row.append(cb, document.createTextNode(` ${app.name}`));
+      row.append(el("span", "hint", app.url.replace(/^https?:\/\//, "").replace(/\/$/, "")));
+      list.append(row);
+    }
+
+    custom.forEach((app, i) => {
+      const row = el("div", "approw");
+      row.append(el("span", undefined, app.name), el("span", "hint", app.url));
+      const rm = el("button", "btn", "Remove");
+      rm.addEventListener("click", () => {
+        custom.splice(i, 1);
+        commit();
+        draw(catalogue);
+      });
+      row.append(rm);
+      list.append(row);
+    });
+
+    const adder = el("div", "approw-add");
+    const name = document.createElement("input");
+    name.placeholder = "Name";
+    const url = document.createElement("input");
+    url.type = "text";
+    url.placeholder = "example.com";
+    const add = el("button", "btn", "Add");
+    const submit = () => {
+      const n = name.value.trim();
+      const u = normaliseUrl(url.value);
+      if (!n || !u) return;
+      custom.push({ name: n, url: u });
+      name.value = "";
+      url.value = "";
+      commit();
+      draw(catalogue);
+    };
+    add.addEventListener("click", submit);
+    for (const field of [name, url]) {
+      field.addEventListener("keydown", (e) => {
+        if ((e as KeyboardEvent).key === "Enter") submit();
+      });
+    }
+    adder.append(name, url, add);
+    list.append(adder);
+  };
+
+  // The bundled suite first, so the picker is usable the moment it opens.
+  // Reading only the worker's payload left this empty on a fresh profile,
+  // where nothing has refreshed yet — an editor with nothing to edit.
+  draw(BUNDLED_APPS);
+
+  // Then whatever the card is actually showing, which may include products
+  // the server added since this build shipped.
+  void getLocal<Record<string, { data?: unknown }>>(KEY.payloads, {})
+    .then((payloads) => {
+      const data = payloads?.[inst.id]?.data;
+      const shown = Array.isArray(data) ? (data as WebApp[]) : [];
+      if (!shown.length) return;
+      // The card shows the *arranged* list, so anything hidden is missing
+      // from it — and a row you cannot see is one you cannot put back. Fold
+      // the bundled list back in to keep every tick reachable.
+      const mine = new Set(custom.map(appKey));
+      const byKey = new Map<string, WebApp>();
+      for (const app of [...BUNDLED_APPS, ...shown]) {
+        if (!mine.has(appKey(app))) byKey.set(appKey(app), app);
+      }
+      draw([...byKey.values()]);
+    })
+    .catch(() => {});
+
+  return box;
+}
+
 function optionsEditor(inst: Instance): HTMLElement | null {
   if (inst.def === "xsearch") return xEditor(inst);
+  if (inst.def === "apps") return appsEditor(inst);
   const fields = FIELDS[inst.def];
   if (!fields?.length) return null;
   const box = el("div", "opts");
@@ -1306,6 +1423,16 @@ async function main() {
     cfg.assistant = (e.target as HTMLSelectElement).value;
     void save();
   });
+  const showProfiles = $("showprofiles") as HTMLInputElement;
+  showProfiles.checked = cfg.show_profile_picker !== false;
+  showProfiles.addEventListener("change", () => {
+    cfg.show_profile_picker = showProfiles.checked;
+    void save(true);
+  });
+  // No switch where the button cannot exist: Firefox has no profile picker
+  // for an extension to open, so a setting for it would govern nothing.
+  if (isFirefox) showProfiles.closest(".field")?.remove();
+
   ($("theme") as HTMLSelectElement).value = cfg.theme || "auto";
   $("theme").addEventListener("change", (e) => {
     cfg.theme = (e.target as HTMLSelectElement).value;

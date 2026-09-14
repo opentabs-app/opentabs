@@ -212,7 +212,7 @@ async function refreshInstance(inst: Instance, local: LocalState): Promise<void>
         );
       }
       case "apps":
-        return await writePayload(inst.id, "apps", await refreshApps());
+        return await writePayload(inst.id, "apps", await refreshApps(inst));
       case "trending":
         return await writePayload(inst.id, "trending", await refreshTrending(inst));
       case "bookmarks": {

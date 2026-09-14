@@ -15,7 +15,22 @@ const g = globalThis as typeof globalThis & {
 
 export const ext: typeof chrome = (g.browser?.runtime ? g.browser : g.chrome) as typeof chrome;
 
-export const isFirefox = !!g.browser?.runtime;
+/**
+ * Firefox, for the few places a real difference has to be branched on.
+ *
+ * This used to be `!!g.browser?.runtime`, on the reasoning above that only
+ * Firefox exposes `browser`. That stopped being true: Chromium now defines a
+ * `browser` global of its own — a distinct object, not an alias of `chrome` —
+ * so the old test reported Firefox on Chrome. It went unnoticed because
+ * `ext` works out the same either way and nothing else consulted this.
+ *
+ * `getBrowserInfo` is a capability instead of a guess: it is part of the
+ * WebExtensions standard that Chromium has never implemented, and it does not
+ * depend on which vendors happen to define which globals this year.
+ */
+export const isFirefox =
+  typeof (g.browser?.runtime as { getBrowserInfo?: unknown } | undefined)?.getBrowserInfo ===
+  "function";
 
 /** Storage keys. One place, so the worker and the page cannot drift. */
 export const KEY = {
@@ -52,6 +67,15 @@ export const KEY = {
   bookmarkUndo: "opentabs:bmundo",
   /** The folder last chosen when saving a tab, so the next save defaults to it. */
   lastFolder: "opentabs:bmfolder",
+  /**
+   * OpenSync keys, relay address and sync bookkeeping.
+   *
+   * `storage.local` and **never** `storage.sync`. The whole point of this
+   * feature is that the settings leave the device sealed; writing the key
+   * that unseals them into a Google-synced bucket would hand it over in
+   * plaintext and make the encryption theatre. `setLocal` is the only writer.
+   */
+  sync: "opentabs:sync",
 } as const;
 
 export async function getSync<T>(key: string, fallback: T): Promise<T> {

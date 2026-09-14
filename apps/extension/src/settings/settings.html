@@ -12,7 +12,7 @@
     <header class="masthead">
       <div>
         <h1 class="greeting brand"><span class="brand-tile" aria-hidden="true"><svg viewBox="0 0 32 32" width="17" height="17" fill="currentColor"><rect x="5.76" y="7.68" width="20.48" height="5.12" rx="1"/><rect x="5.76" y="14.72" width="16" height="4.48" rx="1" opacity=".62"/><rect x="5.76" y="21.12" width="12.16" height="4.48" rx="1" opacity=".62"/></svg></span><span class="brand-word"><span class="muted">Open</span>Tabs<span class="dot">.</span></span></h1>
-        <div class="datel">Everything here lives in your browser. Nothing is sent to a server.</div>
+        <div class="datel">Everything here lives in your browser. Nothing is sent to a server unless you turn on Sync — and then it is sealed before it goes.</div>
       </div>
     </header>
 
@@ -149,6 +149,13 @@
           <option value="google">Google</option>
         </select>
         <div class="hint">Override per query with <code>!c</code>, <code>!p</code>, <code>!g</code>.</div>
+      </div>
+      <div class="field">
+        <label class="inline"><input type="checkbox" id="showprofiles" /> Show the switch-profile button</label>
+        <div class="hint">
+          One click to Chrome's own profile picker, in the top corner of every new tab.
+          Turn it off if you only ever use one profile.
+        </div>
       </div>
       <div class="field">
         <label for="theme">Theme</label>

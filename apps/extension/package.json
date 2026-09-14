@@ -9,6 +9,8 @@
     "icons": "node scripts/generate-icons.mjs",
     "build": "npm run build:wasm && vite build && node scripts/copy-static.mjs",
     "build:firefox": "npm run build:wasm && TARGET_BROWSER=firefox vite build && TARGET_BROWSER=firefox node scripts/copy-static.mjs",
+    "android": "npm run build:firefox && web-ext run --target=firefox-android --source-dir=dist-firefox --adb-remove-old-artifacts",
+    "android:devices": "web-ext run --target=firefox-android --source-dir=dist-firefox --adb-discovery-timeout 5000 || true",
     "dev": "npm run build:wasm && vite build --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -20,6 +22,11 @@
     "@types/node": "^22.10.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "web-ext": "^10.6.0"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.9.7",
+    "@noble/hashes": "^1.8.0"
   }
 }
