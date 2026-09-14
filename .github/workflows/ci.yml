@@ -25,6 +25,12 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      # The grouping corpus: 94 real hosts across the global top of the list,
+      # the regional TLDs and the hosting suffixes. It exits non-zero if any
+      # of them files under a registry rather than a site — the failure that
+      # is invisible in a unit test because it needs a corpus to show up.
+      - name: grouping, over real hosts
+        run: cargo run --release -p tabs-core --example topsites
       - name: wasm builds
         run: cargo build -p tabs-core --release --target wasm32-unknown-unknown
 

@@ -16,155 +16,14 @@ use std::collections::HashMap;
 
 /// Multi-part public suffixes. Single-label TLDs (`com`, `dev`, `app`) need
 /// no entry — the algorithm falls back to "last two labels" for those.
-const SUFFIXES: &[&str] = &[
-    "co.uk",
-    "org.uk",
-    "me.uk",
-    "ac.uk",
-    "gov.uk",
-    "net.uk",
-    "sch.uk",
-    "com.au",
-    "net.au",
-    "org.au",
-    "edu.au",
-    "gov.au",
-    "id.au",
-    "co.nz",
-    "net.nz",
-    "org.nz",
-    "govt.nz",
-    "ac.nz",
-    "co.jp",
-    "or.jp",
-    "ne.jp",
-    "ac.jp",
-    "go.jp",
-    "lg.jp",
-    "com.cn",
-    "net.cn",
-    "org.cn",
-    "gov.cn",
-    "edu.cn",
-    "ac.cn",
-    "com.sg",
-    "net.sg",
-    "org.sg",
-    "edu.sg",
-    "gov.sg",
-    "com.hk",
-    "org.hk",
-    "net.hk",
-    "edu.hk",
-    "gov.hk",
-    "com.tw",
-    "net.tw",
-    "org.tw",
-    "edu.tw",
-    "gov.tw",
-    "co.kr",
-    "or.kr",
-    "ne.kr",
-    "go.kr",
-    "re.kr",
-    "ac.kr",
-    "com.br",
-    "net.br",
-    "org.br",
-    "gov.br",
-    "edu.br",
-    "com.mx",
-    "com.ar",
-    "com.co",
-    "com.pe",
-    "com.ve",
-    "com.ec",
-    "co.in",
-    "net.in",
-    "org.in",
-    "gov.in",
-    "ac.in",
-    "edu.in",
-    "com.my",
-    "net.my",
-    "org.my",
-    "gov.my",
-    "edu.my",
-    "co.id",
-    "or.id",
-    "ac.id",
-    "go.id",
-    "web.id",
-    "co.th",
-    "in.th",
-    "ac.th",
-    "go.th",
-    "com.ph",
-    "com.vn",
-    "com.pk",
-    "com.bd",
-    "com.sa",
-    "com.eg",
-    "co.za",
-    "org.za",
-    "net.za",
-    "gov.za",
-    "ac.za",
-    "com.tr",
-    "net.tr",
-    "org.tr",
-    "gov.tr",
-    "edu.tr",
-    "com.ua",
-    "com.ru",
-    "org.ru",
-    "net.ru",
-    "edu.ru",
-    "gov.ru",
-    "co.il",
-    "org.il",
-    "net.il",
-    "ac.il",
-    "gov.il",
-    "com.es",
-    "com.pl",
-    "com.pt",
-    "com.gr",
-    "com.ro",
-    "com.hr",
-    // Hosting suffixes: each subdomain is a separate site, which is the
-    // whole reason a naive last-two-labels rule is wrong.
-    "github.io",
-    "gitlab.io",
-    "pages.dev",
-    "workers.dev",
-    "vercel.app",
-    "netlify.app",
-    "herokuapp.com",
-    "web.app",
-    "firebaseapp.com",
-    "azurewebsites.net",
-    "cloudfront.net",
-    "s3.amazonaws.com",
-    "blogspot.com",
-    "wordpress.com",
-    "substack.com",
-    "medium.com",
-    "notion.site",
-    "webflow.io",
-    "myshopify.com",
-    "squarespace.com",
-    "ngrok.io",
-    "ngrok-free.app",
-    "trycloudflare.com",
-    "repl.co",
-    "replit.dev",
-    "fly.dev",
-    "onrender.com",
-    "railway.app",
-    "surge.sh",
-    "glitch.me",
-];
+/// The Public Suffix List, generated — see `psl.rs` and
+/// `scripts/update-psl.sh`.
+///
+/// This used to be 145 entries kept by hand. It was correct for the
+/// countries somebody had thought of and silently wrong everywhere else,
+/// which for a product whose whole job is "put these tabs in rows I
+/// recognise" is the failure that matters most and shows least.
+mod psl;
 
 /// Domains whose *homepage* is a destination in its own right. These get
 /// their own group so "Gmail" doesn't sit inside a pile of other google.com
@@ -194,7 +53,7 @@ const HOMEPAGES: &[&str] = &[
     "linear.app",
 ];
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct Tab {
     pub id: i64,
     #[serde(default)]
@@ -342,22 +201,121 @@ pub fn registrable_domain(host: &str) -> Option<String> {
     if host.starts_with('[') || host.parse::<std::net::IpAddr>().is_ok() {
         return None;
     }
+    let host = host.trim_end_matches('.').to_ascii_lowercase();
     let labels: Vec<&str> = host.split('.').filter(|l| !l.is_empty()).collect();
     if labels.len() < 2 {
         return None;
     }
-    // Longest matching suffix wins: `s3.amazonaws.com` must beat `com`.
-    let mut best = 1usize;
-    for suffix in SUFFIXES {
-        let n = suffix.split('.').count();
-        if labels.len() > n {
-            let tail = labels[labels.len() - n..].join(".");
-            if tail.eq_ignore_ascii_case(suffix) && n > best {
-                best = n;
+
+    // The list's own algorithm, and the two rule kinds a hand-written table
+    // never had:
+    //
+    //   *.ck     a wildcard — any single label under `ck` is itself a suffix
+    //   !www.ck  an exception — except this one, which is registrable
+    //
+    // Without them `foo.ck` groups as `foo.ck` when it is a registry, and
+    // `www.ck` fails to group at all. Both are rare; being wrong about them
+    // silently is not better for being rare.
+    let mut best = 0usize; // labels in the matched suffix
+    for i in 0..labels.len() {
+        let candidate = labels[i..].join(".");
+        let n = labels.len() - i;
+
+        if has_rule(&format!("!{candidate}")) {
+            // An exception names a registrable domain outright: the suffix
+            // is everything after its first label.
+            best = n - 1;
+            break;
+        }
+        if has_rule(&candidate) {
+            best = best.max(n);
+        }
+        if i > 0 {
+            let wild = format!("*.{}", labels[i..].join("."));
+            if has_rule(&wild) {
+                best = best.max(n + 1);
             }
         }
     }
-    Some(labels[labels.len() - (best + 1)..].join("."))
+
+    // No rule matched: the implicit rule is `*`, one label, so the
+    // registrable domain is the last two labels — `example.com`.
+    let suffix_labels = best.max(1);
+    if labels.len() <= suffix_labels {
+        // The host *is* a public suffix. `co.uk` alone is not a site, and
+        // filing a tab under a registry is the bug this table exists to
+        // prevent — so say there is no domain rather than invent one.
+        return None;
+    }
+    Some(labels[labels.len() - (suffix_labels + 1)..].join("."))
+}
+
+/// Which Public Suffix List this build carries: its digest and rule count.
+///
+/// Exposed rather than left as a comment in the generated file so that
+/// "which list is in this build" is answerable from the outside — by a
+/// diagnostic, by a test, by anyone wondering whether a grouping oddity is
+/// a stale table.
+pub fn suffix_list_version() -> (&'static str, usize) {
+    (psl::DIGEST, psl::COUNT)
+}
+
+/// Whether a host is itself a public suffix — a registry, not a site.
+///
+/// Exposed because "did this group under a registry" is the check worth
+/// making against a corpus of real hosts, and asking the list is the only
+/// way to make it without a second, hand-written opinion about which names
+/// are registries.
+pub fn is_public_suffix(host: &str) -> bool {
+    let h = host.trim_end_matches('.').to_ascii_lowercase();
+    // Every top-level name is a suffix. The list says so with its implicit
+    // `*` rule, and the generated blob leaves single-label rules out
+    // precisely because they need no table.
+    if !h.contains('.') {
+        return !h.is_empty();
+    }
+    if has_rule(&h) {
+        return true;
+    }
+    // A wildcard makes every child of its parent a suffix too.
+    match h.split_once('.') {
+        Some((_, parent)) => has_rule(&format!("*.{parent}")) && !has_rule(&format!("!{h}")),
+        None => false,
+    }
+}
+
+/// Is `rule` in the list? Binary search over the sorted blob.
+///
+/// The blob is one string with `\n` between rules, so a search means
+/// bisecting on line boundaries rather than indexing a slice. It costs a
+/// handful of comparisons per lookup and no allocation.
+fn has_rule(rule: &str) -> bool {
+    let blob = psl::RULES.as_bytes();
+    let (mut lo, mut hi) = (0usize, blob.len());
+    while lo < hi {
+        let mid = (lo + hi) / 2;
+        // Walk back to the start of the line `mid` fell into.
+        let start = blob[..mid]
+            .iter()
+            .rposition(|&b| b == b'\n')
+            .map_or(0, |i| i + 1);
+        let end = blob[start..]
+            .iter()
+            .position(|&b| b == b'\n')
+            .map_or(blob.len(), |i| start + i);
+        let line = &psl::RULES[start..end];
+        match line.cmp(rule) {
+            std::cmp::Ordering::Equal => return true,
+            std::cmp::Ordering::Less => lo = end + 1,
+            std::cmp::Ordering::Greater => {
+                if start == 0 {
+                    return false;
+                }
+                hi = start - 1;
+            }
+        }
+    }
+    false
 }
 
 /// Group a tab list. Order is stable: largest group first, ties broken by
@@ -435,7 +393,17 @@ pub fn group(tabs: &[Tab]) -> Grouping {
             let d = registrable_domain(&parts.host).unwrap_or_else(|| parts.host.clone());
             (d.clone(), d)
         };
-        let is_homepage = HOMEPAGES.contains(&parts.host.as_str());
+        // From the key, not the raw host.
+        //
+        // HOMEPAGES is an exact-host list, and almost nobody arrives at these
+        // sites on the bare host: it is `www.youtube.com`, `app.slack.com`,
+        // `old.reddit.com`, `m.facebook.com`. Testing the raw host marked
+        // eight of sixteen and missed the rest, so "the sites you live in
+        // float to the top" worked for half the list and which half was luck.
+        //
+        // The key has already been reduced to the registrable domain by this
+        // point, which is the form HOMEPAGES is written in.
+        let is_homepage = HOMEPAGES.contains(&key.as_str());
 
         buckets
             .entry(key.clone())
@@ -750,5 +718,180 @@ mod tests {
         assert_eq!(search(&g, "rust-lang").len(), 1);
         assert_eq!(search(&g, "tab 2").len(), 1);
         assert_eq!(search(&g, "   ").len(), 0);
+    }
+
+    /// The sites in HOMEPAGES float to the top of the card. They have to do
+    /// that on the hosts people actually arrive on, which are almost never
+    /// the bare domain: `www.youtube.com`, `app.slack.com`, `old.reddit.com`,
+    /// `m.facebook.com`. Matching the raw host marked eight of these sixteen
+    /// and silently missed the other eight.
+    #[test]
+    fn a_homepage_is_recognised_however_the_reader_reached_it() {
+        let hosts = [
+            "https://www.youtube.com/watch?v=1",
+            "https://m.youtube.com/feed",
+            "https://www.facebook.com/",
+            "https://m.facebook.com/",
+            "https://old.reddit.com/r/rust/",
+            "https://www.reddit.com/r/rust/",
+            "https://app.slack.com/client/T1/C1",
+            "https://www.linkedin.com/feed/",
+            "https://www.instagram.com/",
+            "https://www.figma.com/file/a/b",
+            "https://www.notion.so/page",
+            "https://www.github.com/rust-lang/rust",
+        ];
+        let tabs: Vec<Tab> = hosts
+            .iter()
+            .enumerate()
+            .map(|(i, u)| Tab {
+                id: i as i64 + 1,
+                url: (*u).to_string(),
+                ..Default::default()
+            })
+            .collect();
+        let g = group(&tabs);
+        for grp in &g.groups {
+            assert!(
+                grp.is_homepage,
+                "{} was not marked a homepage — it will not sort to the top",
+                grp.label
+            );
+        }
+        // And a site that is not on the list stays off it.
+        let other = group(&[Tab {
+            id: 1,
+            url: "https://www.bbc.co.uk/news".into(),
+            ..Default::default()
+        }]);
+        assert!(!other.groups[0].is_homepage);
+    }
+
+    /// The suffix table is what stops a row being named after a registry.
+    /// `bbc.co.uk` under "co.uk" is the shape of the failure.
+    #[test]
+    fn no_top_site_groups_under_a_public_suffix() {
+        for host in [
+            "www.bbc.co.uk",
+            "www.amazon.co.uk",
+            "www.ox.ac.uk",
+            "www.abc.net.au",
+            "www.dbs.com.sg",
+            "www.yahoo.co.jp",
+            "www.uol.com.br",
+            "www.news24.co.za",
+            "www.hurriyet.com.tr",
+            "www.mercadolibre.com.ar",
+            "someone.github.io",
+            "acme.vercel.app",
+            "acme.myshopify.com",
+            "writer.substack.com",
+            "bucket.s3.amazonaws.com",
+        ] {
+            let d = registrable_domain(host).unwrap_or_default();
+            assert!(
+                !has_rule(&d),
+                "{host} grouped under {d}, which is a registry and not a site"
+            );
+            assert!(d.matches('.').count() >= 1, "{host} → {d}");
+        }
+    }
+
+    /// Rules the hand-written table could not express at all, and got
+    /// silently wrong: wildcards, exceptions, and suffixes four labels deep.
+    #[test]
+    fn the_public_suffix_list_rules_the_old_table_could_not_express() {
+        // `*.ck` — every single label under `ck` is a registry…
+        assert_eq!(registrable_domain("foo.ck"), None);
+        // …except the one the list carves out with `!www.ck`.
+        assert_eq!(registrable_domain("www.ck").as_deref(), Some("www.ck"));
+        // Four labels deep. Japan's municipal namespace is the reason the
+        // list is 8,000 rules and not 200.
+        assert_eq!(
+            registrable_domain("www.city.chiyoda.tokyo.jp").as_deref(),
+            Some("city.chiyoda.tokyo.jp")
+        );
+        // A registry is not a site, however plausible it looks as one.
+        for registry in ["co.uk", "com", "org.au", "ac.uk"] {
+            assert_eq!(registrable_domain(registry), None, "{registry}");
+        }
+        // But `kobe.jp` is one: the list carries `*.kobe.jp`, not `kobe.jp`,
+        // so the bare name falls to the implicit rule and is registrable.
+        // Reading the list rather than guessing at it is the whole point.
+        assert_eq!(registrable_domain("kobe.jp").as_deref(), Some("kobe.jp"));
+        // Hosting suffixes keep unrelated sites apart, which is the whole
+        // point of the list's private section.
+        assert_eq!(
+            registrable_domain("someone.github.io").as_deref(),
+            Some("someone.github.io")
+        );
+        assert_eq!(
+            registrable_domain("other.github.io").as_deref(),
+            Some("other.github.io")
+        );
+        // And a plain subdomain still collapses to its site.
+        assert_eq!(
+            registrable_domain("team.slack.com").as_deref(),
+            Some("slack.com")
+        );
+    }
+
+    #[test]
+    fn is_public_suffix_agrees_with_the_list() {
+        for yes in ["co.uk", "com", "github.io", "s3.amazonaws.com", "foo.ck"] {
+            assert!(is_public_suffix(yes), "{yes} should be a suffix");
+        }
+        for no in ["bbc.co.uk", "example.com", "someone.github.io", "www.ck"] {
+            assert!(!is_public_suffix(no), "{no} should not be a suffix");
+        }
+    }
+
+    /// The generated table has to *be* generated, and be plausible.
+    ///
+    /// A table this large is exactly the kind of thing that gets truncated
+    /// by a bad regenerate and nobody notices, because the common cases keep
+    /// working — `.com` needs no table at all. These assertions are cheap
+    /// and would catch a blob that lost its tail.
+    #[test]
+    fn the_generated_suffix_table_is_whole() {
+        let (digest, count) = suffix_list_version();
+        // Counted from the blob, not read from the constant: the point is to
+        // catch a blob that lost its tail, and a stale constant would agree
+        // with itself all the way down.
+        let actual = psl::RULES.lines().count();
+        assert_eq!(actual, count, "COUNT says {count}, the blob has {actual}");
+        assert!(
+            actual > 8_000,
+            "only {actual} rules — a regenerate truncated"
+        );
+        assert_eq!(digest.len(), 16, "the digest did not survive the generate");
+        // Sorted, because the lookup binary-searches it.
+        let mut prev = "";
+        for line in psl::RULES.lines() {
+            assert!(line > prev, "not sorted at {line:?}");
+            prev = line;
+        }
+        // A rule from each end and from the middle of the alphabet, so a
+        // truncation anywhere shows.
+        for rule in [
+            "ac.uk",
+            "github.io",
+            "*.kobe.jp",
+            "s3.amazonaws.com",
+            "zone.id",
+        ] {
+            assert!(has_rule(rule), "missing {rule}");
+        }
+        // The sections the list keeps apart both survived the generate.
+        assert!(has_rule("co.uk"), "ICANN section missing");
+        assert!(has_rule("vercel.app"), "private section missing");
+        assert!(
+            psl::RULES.lines().any(|r| r.starts_with('*')),
+            "wildcards missing"
+        );
+        assert!(
+            psl::RULES.lines().any(|r| r.starts_with('!')),
+            "exceptions missing"
+        );
     }
 }

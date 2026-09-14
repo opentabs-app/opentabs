@@ -14,8 +14,21 @@
  */
 import { deflateSync } from "node:zlib";
 
-/** OpenApps blue. The same ground OpenCapture and the rest of the suite use. */
-export const BLUE = [0x15, 0xb9, 0xeb];
+/**
+ * Accent slot 22 — `--slate`, petrol lifted 74% toward white.
+ *
+ * This was OpenApps blue `#15b9eb` until 8 September 2026, which is slot 2:
+ * held by `openinbox` and used by the shipped `opencapture`, so three products
+ * wore one hue and none of them knew. See `tokens/ACCENT-SLOTS.md`.
+ *
+ * The move is not only bookkeeping. The mark is a fill with white bars on it,
+ * and white on the old blue was 2.29:1 — barely a bar at 16px. On slate it is
+ * 3.90:1.
+ */
+export const SLATE = [0x54, 0x89, 0x94];
+
+/** @deprecated The old slot-2 blue. Kept so nothing importing it breaks. */
+export const BLUE = SLATE;
 
 /**
  * The three bars, in fractions of the canvas.
@@ -75,7 +88,7 @@ export function png(size) {
         return b.on ? [255, 255, 255, 255] : [255, 255, 255, 150];
       }
     }
-    return [...BLUE, 255];
+    return [...SLATE, 255];
   };
 
   const raw = Buffer.alloc(size * (size * 4 + 1));
@@ -117,7 +130,7 @@ export function svg(px = 32) {
     const fill = b.on ? "#ffffff" : "rgba(255,255,255,0.59)";
     return `  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${(px * 0.02).toFixed(2)}" fill="${fill}"/>`;
   };
-  const blue = `#${BLUE.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+  const blue = `#${SLATE.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${px} ${px}" role="img" aria-label="OpenTabs">`,
     `  <rect width="${px}" height="${px}" rx="${(px * RADIUS).toFixed(2)}" fill="${blue}"/>`,
