@@ -22,6 +22,7 @@
       <button data-pane="calendar">Calendar</button>
       <button data-pane="market">Marketplace</button>
       <button data-pane="general">General</button>
+      <button data-pane="sync">Sync</button>
       <button data-pane="data">Import &amp; export</button>
     </nav>
 
@@ -186,6 +187,82 @@
         <label>Site access</label>
         <div class="hint" id="perms"></div>
         <button class="btn" id="grantall">Grant access for everything I've enabled</button>
+      </div>
+    </section>
+
+    <section class="pane" id="pane-sync">
+      <p class="hint">
+        <code>storage.sync</code> already follows one browser signed into one account.
+        This crosses the line that cannot: Chrome to Firefox, work profile to personal,
+        a laptop signed into nothing. Your settings, to-dos, Focus list, calendar
+        addresses and API keys are sealed on this device before they leave it — the
+        relay holds ciphertext and a public key, and nothing that can read them.
+      </p>
+
+      <div id="syncoff">
+        <div class="field">
+          <label for="syncrelay">Relay address</label>
+          <div class="hint">
+            Where the sealed bytes rest. The default is the OpenSync relay, shared by every
+            OpenApps product so a device you have already paired stays paired — it holds
+            ciphertext and a public key, and no name, address or account. To rest them
+            somewhere else instead, run <code>opensync relay</code> on a machine of your
+            own and put its address here.
+          </div>
+          <input id="syncrelay" type="text" spellcheck="false" placeholder="wss://sync.example.com/" />
+        </div>
+        <div class="field">
+          <label for="syncdevice">Call this device</label>
+          <input id="syncdevice" type="text" spellcheck="false" placeholder="Work laptop" />
+        </div>
+        <div class="field">
+          <label>Start here</label>
+          <div class="hint">Sets up a new account and publishes what this browser already has.</div>
+          <button class="btn primary" id="syncstart">Turn on sync</button>
+        </div>
+        <div class="field">
+          <label for="syncjoin">…or join a device that already has it</label>
+          <div class="hint">
+            Paste the whole <code>opensync://pair…</code> line, or type the ten characters and
+            fill in the relay above.
+            <strong>This browser's settings will be replaced by the account's.</strong>
+          </div>
+          <input id="syncjoin" type="text" spellcheck="false" placeholder="9x4k-tv2q8m" />
+          <div class="row-actions">
+            <button class="btn" id="syncjoinbtn">Join</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="syncon" hidden>
+        <div class="field">
+          <label>Status</label>
+          <p class="hint" id="syncstatus">—</p>
+          <div class="row-actions">
+            <button class="btn primary" id="syncnow">Sync now</button>
+            <button class="btn" id="syncadd">Add a device</button>
+          </div>
+        </div>
+        <div class="field" id="synccodebox" hidden>
+          <label>Type this on the other device</label>
+          <p class="hint" id="synccode"></p>
+          <p class="hint" id="syncuri"></p>
+          <p class="hint" id="syncwait"></p>
+        </div>
+        <div class="field">
+          <label>If a device is lost</label>
+          <div class="hint">
+            Rotating re-seals everything under a new key, so what is on the relay becomes
+            ciphertext nobody holds a key for. <strong>Every other device loses access
+            until you pair it again</strong> — that is the point, and it cannot be undone.
+          </div>
+          <button class="btn danger" id="syncrotate">Rotate the key</button>
+        </div>
+        <div class="field">
+          <label>Stop</label>
+          <div class="hint">Forgets the account on this browser. Your settings stay exactly as they are.</div>
+          <button class="btn danger" id="syncunlink">Turn off sync here</button>
+        </div>
       </div>
     </section>
 

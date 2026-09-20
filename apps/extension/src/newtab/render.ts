@@ -368,6 +368,20 @@ export function bookmarkable(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
 
+/** `:3000` for a loopback URL that names a port, otherwise nothing.
+ *
+ *  Parsed rather than pattern-matched: a title or a query string can contain
+ *  something that looks like `:8080`, and only the host's own port is meant. */
+function localPort(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const local = u.hostname === "localhost" || u.hostname.startsWith("127.") || u.hostname === "[::1]";
+    return local && u.port ? `:${u.port}` : null;
+  } catch {
+    return null;
+  }
+}
+
 function tabRow(
   t: Grouping["groups"][number]["tabs"][number],
   closed: (n: number) => void = () => {},
@@ -385,6 +399,16 @@ function tabRow(
     a.append(img);
   }
   a.append(el("span", undefined, t.title || t.url));
+
+  // The port, on local rows only.
+  //
+  // Grouping puts every localhost port in one group, which is what makes the
+  // group useful — but it also means two rows that differ only by port would
+  // otherwise be told apart by their titles, and a dev server's title is very
+  // often the framework's default on every one of them. This is the thing that
+  // keeps 3000 and 8080 legible now that the header no longer says which.
+  const port = localPort(t.url);
+  if (port) a.append(el("span", "tabport", port));
 
   const x = el("span", "x", "\u2715");
 

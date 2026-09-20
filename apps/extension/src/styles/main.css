@@ -329,6 +329,18 @@ button {
 }
 .tablink .x { margin-left: auto; opacity: 0; color: var(--text-faint, #989898); flex: none; }
 .tablink:hover .x { opacity: 1; }
+
+/* The port on a local tab row. Quiet — a disambiguator, not a label. Its own
+   rule because `.tablink span` above is the title's two-line clamp, and a
+   clamped box is the wrong shape for four characters that must not wrap. */
+.tablink .tabport {
+  display: inline; flex: none;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--text-faint, #9a9a9a);
+  white-space: nowrap;
+  margin-top: 2px;
+}
 /* In the card head now, so it wears the head's scale and the warning colour
  * that says "this closes tabs" rather than looking like another link. */
 .card-head .dupe {

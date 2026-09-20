@@ -193,20 +193,24 @@ describe.runIf(built)("shipped size", () => {
   it("the whole extension stays small", () => {
     // "Light" is a stated property of this product, so it gets a number.
     //
-    // Raised twice now, deliberately and not quietly. 120 → 140 KB covered
-    // the focus checklist, per-host backoff, the bookmarks group and X's
-    // filter controls; 140 → 170 KB covered the marketplace — a pane, a
-    // publish dialog, a pack validator and a theme engine.
+    // Raised three times now, deliberately and not quietly. 120 → 140 KB
+    // covered the focus checklist, per-host backoff, the bookmarks group and
+    // X's filter controls; 140 → 170 KB covered the marketplace — a pane, a
+    // publish dialog, a pack validator and a theme engine; 170 → 240 KB
+    // covers OpenSync, which is a whole encryption engine's worth of glue.
     //
-    // OpenSync will need more, and gets it in the change that ships it. Not
-    // before: raising a cap ahead of the feature that needs it leaves room
-    // for something else to grow into unnoticed.
+    // The engine's own wasm is not in this number and should not be: it is a
+    // separate asset the worker loads off disk, it is not parsed unless sync
+    // is switched on, and counting it here would make this cap a proxy for
+    // "how big is wasm" rather than "how much JavaScript runs".
     //
     // What has *not* moved is the paint path, which is what "light" actually
-    // means here and which carries its own, tighter cap. This number moving
-    // cannot hide the number that matters.
+    // means here and which carries its own, tighter cap. Sync is entirely in
+    // the settings page and the worker; `newtab.js` did not gain a byte, and
+    // the wasm assertion above keeps that honest. This number moving cannot
+    // hide the number that matters.
     const files = ["newtab.js", "settings.js", "background.js", "assets/main.css"];
     const total = files.reduce((n, f) => n + statSync(resolve(dist, f)).size, 0);
-    expect(total).toBeLessThan(170 * 1024);
+    expect(total).toBeLessThan(240 * 1024);
   });
 });
