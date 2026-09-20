@@ -377,17 +377,30 @@ pub fn group(tabs: &[Tab]) -> Grouping {
             .or_default()
             .push(t.id);
 
-        // localhost:3000 and localhost:8080 are different projects, and
-        // collapsing them is the single most annoying thing a dev-facing
-        // grouper can do.
+        // One group for the machine, not one per port.
+        //
+        // This used to split on the port, on the reasoning that localhost:3000
+        // and localhost:8080 are different projects. True, and it produced a
+        // column of one-tab groups on exactly the machine that has the most
+        // tabs open — anyone running a few services at once got a header and a
+        // count per port and no grouping at all. Darius asked for them
+        // together, which is the right call for the common case.
+        //
+        // What the split was protecting is that the ports stay *legible*, and
+        // they do: the new tab page tags each local row with its own port, so
+        // 3000 and 8080 are still told apart inside the group. Merging the
+        // rows without that tag would be the annoying version.
+        //
+        // `127.0.0.1` stays its own group, because it is a different host as
+        // typed even though it is the same machine.
         let is_local = parts.host == "localhost" || parts.host.starts_with("127.");
-        let (key, label) = if is_local {
-            let k = match parts.port {
-                Some(p) => format!("{}:{}", parts.host, p),
-                None => parts.host.clone(),
-            };
-            (k.clone(), k)
-        } else if HOMEPAGES.contains(&parts.host.as_str()) {
+        // Two different reasons for the same answer, so they share a branch:
+        // a local host groups by the machine, and a homepage is a host people
+        // name exactly. Both are the host as typed, neither is a registrable
+        // domain. Clippy is right that the blocks were identical; the comment
+        // is here because the *reasons* are not, and a later change to one of
+        // them will need to split this again.
+        let (key, label) = if is_local || HOMEPAGES.contains(&parts.host.as_str()) {
             (parts.host.clone(), parts.host.clone())
         } else {
             let d = registrable_domain(&parts.host).unwrap_or_else(|| parts.host.clone());
@@ -548,15 +561,30 @@ mod tests {
     }
 
     #[test]
-    fn localhost_ports_are_separate_projects() {
+    fn every_localhost_port_is_one_group() {
         let g = group(&[
             tab(1, "http://localhost:3000/a"),
             tab(2, "http://localhost:8080/b"),
             tab(3, "http://localhost:3000/c"),
+            tab(4, "http://localhost/d"),
+        ]);
+        assert_eq!(g.groups.len(), 1);
+        assert_eq!(g.groups[0].key, "localhost");
+        assert_eq!(g.groups[0].label, "localhost");
+        assert_eq!(g.groups[0].tabs.len(), 4);
+    }
+
+    /// Same machine, different host as typed — and merging them would mean
+    /// deciding that `127.0.0.1` should read as `localhost` in the header.
+    #[test]
+    fn a_loopback_ip_is_its_own_group() {
+        let g = group(&[
+            tab(1, "http://localhost:3000/a"),
+            tab(2, "http://127.0.0.1:3000/b"),
         ]);
         assert_eq!(g.groups.len(), 2);
         let keys: Vec<&str> = g.groups.iter().map(|x| x.key.as_str()).collect();
-        assert!(keys.contains(&"localhost:3000") && keys.contains(&"localhost:8080"));
+        assert!(keys.contains(&"localhost") && keys.contains(&"127.0.0.1"));
     }
 
     #[test]

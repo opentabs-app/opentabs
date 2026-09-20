@@ -16,6 +16,23 @@ const targetBrowser = process.env.TARGET_BROWSER === "firefox" ? "firefox" : "ch
 
 export default defineConfig({
   root: resolve(__dirname),
+  plugins: [
+    {
+      // The engine inlines its wasm as base64 for web apps that want one
+      // fewer round trip. An extension loads it off its own disk instead, so
+      // the string is 988 KB of duplicate shipped for nothing. Matched on the
+      // importer rather than by alias: the specifier is the relative
+      // "./wasm/inline", which an alias on a resolved path never sees.
+      // See src/background/opensync-wasm.ts.
+      name: "opentabs:opensync-inline-stub",
+      enforce: "pre" as const,
+      resolveId(source: string, importer: string | undefined) {
+        if (source !== "./wasm/inline") return null;
+        if (!importer?.includes("opensync/packages/client/src")) return null;
+        return resolve(__dirname, "src/background/opensync-inline-stub.ts");
+      },
+    },
+  ],
   build: {
     outDir: targetBrowser === "firefox" ? "dist-firefox" : "dist",
     emptyOutDir: true,

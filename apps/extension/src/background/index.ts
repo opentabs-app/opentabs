@@ -22,6 +22,7 @@ import {
 import { explainNow, pruneIntervalMinutes, pruneNewTabs, pruneOptionsFrom } from "./prune";
 import * as session from "./session";
 import { clearStaleLock, resetSchedule } from "./xscrape";
+import * as sync from "./sync";
 import { wasm } from "./wasm-loader";
 
 const ALARM_REFRESH = "opentabs:refresh";
@@ -434,6 +435,7 @@ async function schedulePrune(): Promise<void> {
 
 ext.runtime.onInstalled.addListener(() => {
   void installAlarms();
+  void sync.schedule();
   // An update replaces the extension's files, and a registration that points
   // at the old ones is not carried across. Re-registering here is what stops
   // "Add to OpenTabs" quietly dying at the next version bump.
@@ -443,6 +445,11 @@ ext.runtime.onInstalled.addListener(() => {
 
 ext.runtime.onStartup.addListener(() => {
   void installAlarms();
+  void sync.schedule();
+  // Sitting down at a second machine is exactly when the other one's changes
+  // are wanted, and waiting up to the alarm period to fetch them is the
+  // difference between sync that works and sync that people stop trusting.
+  void sync.run();
   void session.ensureRelays();
   void sweepOverdue();
   void clearStoredErrors().then(() => refreshAll());
@@ -468,6 +475,7 @@ ext.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === ALARM_REFRESH) void refreshAll();
   if (alarm.name === ALARM_TODO) void fireDueReminders();
   if (alarm.name === ALARM_PRUNE) void pruneNow();
+  if (alarm.name === sync.ALARM_NAME) void sync.run();
 });
 
 ext.tabs.onCreated.addListener(() => void refreshTabs());
@@ -514,6 +522,12 @@ ext.permissions.onAdded?.addListener(() => {
 // only after the next browser restart.
 ext.storage.onChanged.addListener((changes, area) => {
   if ((area === "sync" || area === "local") && changes[KEY.config]) void schedulePrune();
+  // Everything that travels, watched in one place rather than at each of the
+  // dozen call sites that write a setting — one of those would always be the
+  // one nobody remembered to touch.
+  if ((area === "sync" || area === "local") && (changes[KEY.config] || changes[KEY.local])) {
+    void sync.noteLocalChange();
+  }
 });
 
 /**
@@ -590,6 +604,84 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     void session.signOut().then(() => sendResponse({ ok: true }));
     return true;
   }
+  // ---------- OpenSync: settings across browsers ----------
+
+  /** Whatever went wrong, as the one sentence the pane can show. */
+  const why = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+  /**
+   * The settings page drives sync from here rather than doing it itself.
+   *
+   * Every one of these crosses a message boundary on purpose: the vault key
+   * and the account secret stay in the worker, and a page that never holds
+   * them cannot leak them into a screenshot, a devtools panel or an export.
+   * `syncState` deliberately returns everything *except* the two keys.
+   */
+  if (type === "syncState") {
+    void sync.state().then((st) => {
+      const { accountSecret: _a, namespaceKey: _n, ...safe } = st;
+      sendResponse({ ...safe, linked: sync.linked(st) });
+    });
+    return true;
+  }
+  if (type === "syncRun") {
+    void sync.run().then(sendResponse);
+    return true;
+  }
+  if (type === "syncStart") {
+    const { relay, device } = msg as { relay?: string; device?: string };
+    void sync
+      .start(relay ?? "", device ?? "")
+      .then(() => sync.schedule())
+      .then(() => sendResponse({ ok: true }))
+      .catch((e: unknown) => sendResponse({ ok: false, error: why(e) }));
+    return true;
+  }
+  if (type === "syncJoin") {
+    const { relay, code, device } = msg as { relay?: string; code?: string; device?: string };
+    void sync
+      .join(relay ?? "", code ?? "", device ?? "")
+      .then(() => sync.schedule())
+      .then(() => sendResponse({ ok: true }))
+      .catch((e: unknown) => sendResponse({ ok: false, error: why(e) }));
+    return true;
+  }
+  if (type === "syncOffer") {
+    void sync
+      .offer()
+      .then((offer) => sendResponse({ ok: true, ...offer }))
+      .catch((e: unknown) => sendResponse({ ok: false, error: why(e) }));
+    return true;
+  }
+  /**
+   * Waits for a device to answer the code — up to two minutes.
+   *
+   * Longer than a service worker's idle timeout, which is fine: the wait is
+   * websocket traffic, and websocket traffic is what resets that timer.
+   */
+  if (type === "syncOfferDone") {
+    void sync
+      .awaitOffer()
+      .then(() => sendResponse({ ok: true }))
+      .catch((e: unknown) => sendResponse({ ok: false, error: why(e) }));
+    return true;
+  }
+  if (type === "syncRotate") {
+    void sync
+      .rotate()
+      .then((r) => sendResponse({ ok: true, ...r }))
+      .catch((e: unknown) => sendResponse({ ok: false, error: why(e) }));
+    return true;
+  }
+  if (type === "syncUnlink") {
+    void sync
+      .unlink()
+      .then(() => sync.schedule())
+      .then(() => sendResponse({ ok: true }))
+      .catch((e: unknown) => sendResponse({ ok: false, error: why(e) }));
+    return true;
+  }
+
   /** Registered relays follow the permissions, so the pane re-checks after
    *  a grant rather than waiting for the next browser start. */
   if (type === "ensureRelays") {

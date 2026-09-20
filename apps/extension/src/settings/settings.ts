@@ -13,6 +13,7 @@ import { ext, isFirefox, KEY, getLocal, getSync, setLocal, setSync } from "../li
 import { SITE_MATCH } from "../lib/openapps";
 import { appKey, BUNDLED_APPS, normaliseUrl, type WebApp } from "../lib/apps";
 import { initMarketPane, openShareDialog, showMarketPane } from "./marketpane";
+import { initSyncPane, showSyncPane } from "./syncpane";
 import type { Binding, Config, Instance, LocalState } from "../lib/types";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -1298,6 +1299,7 @@ function showPane(pane: string) {
   document.querySelector(`#nav button[data-pane="${pane}"]`)?.classList.add("on");
   $(`pane-${pane}`).classList.add("on");
   if (pane === "data") drawData();
+  if (pane === "sync") showSyncPane({ $, toast });
   if (pane === "general") void showPerms();
   if (pane === "market") {
     drawShareRow();
@@ -1394,6 +1396,7 @@ async function main() {
   }
 
   initMarketPane(marketDeps());
+  initSyncPane({ $, toast });
   drawGroups();
   drawBookmarkAdder();
   drawTopics();
