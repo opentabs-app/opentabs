@@ -15,6 +15,9 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+/** Built in the engine repo, which sits beside this one on a dev machine only. */
+export const RELAY_BIN = resolve(here, "../../../../opensync/target/release/opensync-relay");
+
 export interface Relay {
   ws: string;
   http: string;
@@ -47,7 +50,7 @@ async function awaitRelay(http: string, deadline: number): Promise<void> {
 }
 
 export async function startRelay(): Promise<Relay> {
-  const bin = resolve(here, "../../../../opensync/target/release/opensync-relay");
+  const bin = RELAY_BIN;
   const dir = mkdtempSync(join(tmpdir(), "opentabs-sync-"));
   const port = await freePort();
   const config = join(dir, "relay.toml");

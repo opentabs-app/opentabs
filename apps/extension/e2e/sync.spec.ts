@@ -12,11 +12,20 @@
  * own defaults over the account it had just been invited into.
  */
 import { test, expect, chromium, type BrowserContext, type Worker } from "@playwright/test";
+import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { startRelay, type Relay } from "./relay";
+import { RELAY_BIN, startRelay, type Relay } from "./relay";
 
 const dist = resolve(dirname(fileURLToPath(import.meta.url)), "..", "dist");
+
+// CI has no engine checkout, so no relay to run; the engine repo is not public
+// for it to fetch. Skipped there, and only there — on a dev machine a missing
+// binary still fails loudly, with the command that builds it.
+test.skip(
+  !!process.env.CI && !existsSync(RELAY_BIN),
+  "no OpenSync relay on this runner (the engine repo is not checked out here)",
+);
 
 let relay: Relay;
 test.beforeAll(async () => {

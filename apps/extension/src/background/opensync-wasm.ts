@@ -21,10 +21,10 @@
  * `new URL(…, import.meta.url)` below into the hashed asset it emits, exactly
  * as it does for the extension's own core.
  */
-import { ready } from "../../../../../opensync/packages/client/src";
+import { ready } from "../../vendor/opensync-client";
 
 const WASM_URL = new URL(
-  "../../../../../opensync/packages/client/src/wasm/opensync_wasm_bg.wasm",
+  "../../vendor/opensync-client/wasm/opensync_wasm_bg.wasm",
   import.meta.url,
 );
 
