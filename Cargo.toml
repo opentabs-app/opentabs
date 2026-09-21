@@ -8,7 +8,7 @@ members = ["crates/tabs-core", "crates/tabs-feedgen", "crates/tabs-market", "app
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
+license = "AGPL-3.0-or-later"
 repository = "https://github.com/opentabs-app/OpenTabs"
 
 [workspace.dependencies]

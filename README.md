@@ -140,4 +140,6 @@ needs one line: the extension origin in `allowed_origins`.
 
 ## Licence
 
-MIT.
+[AGPL-3.0-or-later](LICENSE). If you build on this code and offer it as a
+network service, the AGPL requires you to make your source available to
+that service's users too.
