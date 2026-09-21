@@ -36,7 +36,7 @@ import {
   HOSTED_RELAY_WS,
   HOSTED_RELAY_HTTP,
   NotAdmittedError,
-} from "../../../../../opensync/packages/client/src";
+} from "../../vendor/opensync-client";
 import { boot } from "./opensync-wasm";
 import { ext, KEY, getLocal, getSync, setLocal, setSync } from "../lib/ext";
 import { decide, decode, encode, fingerprint, type SyncBody, type SyncDoc } from "../lib/sync-doc";
@@ -385,7 +385,7 @@ export async function offer(): Promise<{ code: string; uri: string }> {
   // Kept here rather than returned: the settings page asks for the code in one
   // message and waits for the answer in another, and a promise does not
   // survive the trip between them.
-  pending = grantAccount(
+  const grant = grantAccount(
     s.relayWs,
     code,
     {
@@ -400,7 +400,8 @@ export async function offer(): Promise<{ code: string; uri: string }> {
   );
   // Nothing awaits this yet, and an unhandled rejection would take the worker
   // down with it. The real answer is handed over by `awaitOffer`.
-  pending.catch(() => {});
+  grant.catch(() => {});
+  pending = grant;
   return { code: text, uri };
 }
 

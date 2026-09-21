@@ -13,7 +13,9 @@
     "android:devices": "web-ext run --target=firefox-android --source-dir=dist-firefox --adb-discovery-timeout 5000 || true",
     "dev": "npm run build:wasm && vite build --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "npm run vendor:opensync:check && vitest run",
+    "vendor:opensync": "node scripts/vendor-opensync.mjs",
+    "vendor:opensync:check": "node scripts/vendor-opensync.mjs --check",
     "e2e": "playwright test"
   },
   "devDependencies": {
