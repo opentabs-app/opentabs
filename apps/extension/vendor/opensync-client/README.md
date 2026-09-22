@@ -11,8 +11,12 @@ is a `@ts-nocheck` line atop each `.ts` file; the script says why.
 `opensync-*` crates in the engine repository. `wasm/inline.ts` is an empty
 stub, not the engine's base64 copy: the extension loads the binary instead.
 
-The client is MIT-licensed by the OpenSync contributors, the same copy
-opensync-obsidian vendors.
+## Licence
+
+This directory is **not** under the repository's AGPL-3.0. It is OpenSync's
+code and keeps OpenSync's licence: MIT OR Apache-2.0, at your option (the
+engine's `Cargo.toml` and README). Both are permissive and combine with the
+AGPL in the rest of the extension.
 
 To refresh, with the engine checked out beside this repository:
 

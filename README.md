@@ -143,3 +143,7 @@ needs one line: the extension origin in `allowed_origins`.
 [AGPL-3.0-or-later](LICENSE). If you build on this code and offer it as a
 network service, the AGPL requires you to make your source available to
 that service's users too.
+
+The one exception is `apps/extension/vendor/opensync-client`, a copy of
+OpenSync's browser client, which keeps OpenSync's own licence: MIT OR
+Apache-2.0.
