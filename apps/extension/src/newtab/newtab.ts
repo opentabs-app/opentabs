@@ -10,6 +10,7 @@
  * over a message rather than done here.
  */
 import { ext, isFirefox, KEY, getLocal, getSync, setLocal } from "../lib/ext";
+import { profilePickerUrl } from "../lib/profiles";
 import { OPENAPPS_MATCH } from "../lib/openapps";
 import { applyTheme } from "../lib/theme";
 import type { Config, LocalState, Payloads } from "../lib/types";
@@ -338,8 +339,10 @@ function setupAccount() {
  * Measured, not assumed: `chrome.profiles` and `chrome.users` are both
  * `undefined`, and `chrome.windows.create({ profileName })` is rejected with
  * "Unexpected property" — so naming a profile and going there is not on the
- * table. `chrome://profile-picker` is, and Edge aliases the `chrome:` form to
- * its own `edge://`, so one URL covers both.
+ * table. `chrome://profile-picker` is — in Chrome. Edge has no such page and
+ * shows ERR_INVALID_URL for it, so Edge goes to Settings → Profiles instead,
+ * which lists every other profile with a Switch button (APP-122; see
+ * src/lib/profiles.ts).
  *
  * That still removes the slow half. What costs time is finding the right
  * profile in the avatar menu, not the click that follows it.
@@ -364,7 +367,8 @@ function setupProfiles(wanted: boolean): void {
   button.hidden = false;
 
   button.addEventListener("click", () => {
-    void ext.tabs.create({ url: "chrome://profile-picker" }).catch(() => {
+    const uaData = (navigator as Navigator & { userAgentData?: { brands: { brand: string }[] } }).userAgentData;
+    void ext.tabs.create({ url: profilePickerUrl(uaData?.brands, navigator.userAgent) }).catch(() => {
       button.hidden = true;
       note(button, "This browser will not let an extension open the profile picker. Use the avatar button in the toolbar.");
     });
