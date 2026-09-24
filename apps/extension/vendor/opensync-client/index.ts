@@ -6,3 +6,5 @@ export * from "./pairing";
 export * from "./qr";
 export * from "./scan";
 export * from "./vault";
+export * from "./account";
+export * from "./signer";

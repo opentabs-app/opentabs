@@ -1,7 +1,8 @@
 // @ts-nocheck -- vendored; see scripts/vendor-opensync.mjs
-import { schnorr } from "@noble/curves/secp256k1";
-import { sha256 } from "@noble/hashes/sha256";
-import { bytesToHex, hexToBytes, utf8ToBytes } from "@noble/hashes/utils";
+import type { NostrEvent, NostrSigner } from "./signer";
+
+export { Signer, Nip07Signer, RemoteSigner, SignerError } from "./signer";
+export type { EventTemplate, NostrEvent, NostrSigner, SignerChoice } from "./signer";
 
 /** Kind 30078: addressable, so the relay keeps exactly one per (pubkey, kind, d). */
 const KIND_POINTER = 30078;
@@ -14,44 +15,13 @@ const EXCHANGE_TIMEOUT_MS = 20_000;
 const FETCH_TIMEOUT_MS = 20_000;
 /** Retries after the first attempt, for failures a retry can fix. */
 const FETCH_RETRIES = 2;
-
-export interface NostrEvent {
-  id: string;
-  pubkey: string;
-  created_at: number;
-  kind: number;
-  tags: string[][];
-  content: string;
-  sig: string;
-}
-
-export class Signer {
-  readonly pubkey: string;
-
-  constructor(private readonly secret: Uint8Array) {
-    this.pubkey = bytesToHex(schnorr.getPublicKey(secret));
-  }
-
-  static generate(): Signer {
-    return new Signer(schnorr.utils.randomPrivateKey());
-  }
-
-  static fromHex(hex: string): Signer {
-    return new Signer(hexToBytes(hex));
-  }
-
-  toHex(): string {
-    return bytesToHex(this.secret);
-  }
-
-  sign(kind: number, tags: string[][], content: string, createdAt: number): NostrEvent {
-    const event = { pubkey: this.pubkey, created_at: createdAt, kind, tags, content };
-    // NIP-01's canonical form, byte for byte, or the id will not match.
-    const canonical = JSON.stringify([0, event.pubkey, event.created_at, event.kind, event.tags, event.content]);
-    const id = bytesToHex(sha256(utf8ToBytes(canonical)));
-    return { ...event, id, sig: bytesToHex(schnorr.sign(id, this.secret)) };
-  }
-}
+/**
+ * How long to wait for the AUTH answer once the relay has challenged.
+ *
+ * Longer than the connect timeout on purpose: with a remote signer the
+ * answer is a request to a phone, which somebody has to unlock and approve.
+ */
+const AUTH_TIMEOUT_MS = 90_000;
 
 export interface RelayOptions {
   /** Per-request HTTP timeout. Uploads get more in proportion to their size. */
@@ -113,7 +83,7 @@ export class Relay {
   constructor(
     private readonly wsUrl: string,
     private readonly httpUrl: string,
-    private readonly signer: Signer,
+    private readonly signer: NostrSigner,
     options: RelayOptions = {},
   ) {
     this.fetchTimeoutMs = options.fetchTimeoutMs ?? FETCH_TIMEOUT_MS;
@@ -200,12 +170,14 @@ export class Relay {
     }
   }
 
-  private route(socket: WebSocket, msg: any[]): boolean {
+  private route(socket: WebSocket, msg: any[], onAuthFailed?: (err: Error) => void): boolean {
     switch (msg[0]) {
       case "AUTH":
         if (typeof msg[1] === "string") {
           // A relay may challenge on connect or mid-connection; answer either.
-          socket.send(JSON.stringify(["AUTH", this.authEvent(msg[1])]));
+          // The answer is signed asynchronously — an extension may prompt,
+          // a bunker is a round trip — so it is sent whenever it is ready.
+          void this.answerAuth(socket, msg[1]).catch((e) => onAuthFailed?.(e));
         }
         return false;
       case "EVENT": {
@@ -301,14 +273,17 @@ export class Relay {
         }
       };
 
-      const timer = setTimeout(() => {
-        done(this.unreachable());
+      const giveUp = (err: Error) => {
+        done(err);
         try {
           socket.close();
         } catch {
           /* already gone */
         }
-      }, 15000);
+      };
+      let timer = setTimeout(() => giveUp(this.unreachable()), 15000);
+      /** Set once the relay has asked us to authenticate. */
+      let challenged = false;
 
       socket.onerror = () => done(this.unreachable());
       socket.onclose = () => {
@@ -331,14 +306,28 @@ export class Relay {
         //
         // A relay that never asks is also fine: the grace timer below gives
         // up waiting and proceeds unauthenticated.
-        setTimeout(() => done(), 3000);
+        //
+        // Once challenged, the grace timer no longer applies: the signer may
+        // be a person approving on a phone, and proceeding unauthenticated
+        // meanwhile only gets every request refused.
+        setTimeout(() => {
+          if (!challenged) done();
+        }, 3000);
       };
 
       socket.onmessage = (ev) => {
         const msg = safeParse(ev.data);
         if (!msg) return;
+        if (msg[0] === "AUTH" && !challenged && !settled) {
+          challenged = true;
+          clearTimeout(timer);
+          timer = setTimeout(
+            () => giveUp(new RelayUnreachableError("the relay asked this account to sign in and no signature came")),
+            AUTH_TIMEOUT_MS,
+          );
+        }
         // The OK for our AUTH is the signal that the connection is usable.
-        if (this.route(socket, msg)) done();
+        if (this.route(socket, msg, (err) => giveUp(err))) done();
       };
     });
     return this.connecting;
@@ -369,16 +358,17 @@ export class Relay {
     }, delay);
   }
 
-  private authEvent(challenge: string) {
-    return this.signer.sign(
-      KIND_CONNECTION_AUTH,
-      [
+  private async answerAuth(socket: WebSocket, challenge: string): Promise<void> {
+    const event = await this.signer.signEvent({
+      kind: KIND_CONNECTION_AUTH,
+      tags: [
         ["relay", this.wsUrl],
         ["challenge", challenge],
       ],
-      "",
-      this.now(),
-    );
+      content: "",
+      created_at: this.now(),
+    });
+    if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(["AUTH", event]));
   }
 
   /** Send one REQ and collect what it has stored, up to EOSE. */
@@ -412,6 +402,18 @@ export class Relay {
 
   private pointerFilter(namespace: string): Record<string, unknown> {
     return { authors: [this.signer.pubkey], kinds: [KIND_POINTER], "#d": [namespace] };
+  }
+
+  /**
+   * Any addressable record this account keeps under `d`, such as the sealed
+   * vault key at `opensync:keys`. A pointer is one of these; so is that.
+   */
+  fetchRecord(d: string): Promise<string | null> {
+    return this.fetchPointer(d);
+  }
+
+  publishRecord(d: string, content: string): Promise<void> {
+    return this.publishPointer(d, content);
   }
 
   async fetchPointer(namespace: string): Promise<string | null> {
@@ -462,12 +464,12 @@ export class Relay {
   }
 
   async publishPointer(namespace: string, hexPayload: string): Promise<void> {
-    const event = this.signer.sign(
-      KIND_POINTER,
-      [["d", namespace]],
-      hexPayload,
-      this.nextCreatedAt(),
-    );
+    const event = await this.signer.signEvent({
+      kind: KIND_POINTER,
+      tags: [["d", namespace]],
+      content: hexPayload,
+      created_at: this.nextCreatedAt(),
+    });
     const socket = await this.connect();
     const ok = await new Promise<any[]>((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -476,7 +478,7 @@ export class Relay {
       }, EXCHANGE_TIMEOUT_MS);
       this.awaitingOk.set(event.id, (msg) => {
         clearTimeout(timer);
-        if (msg[0] === "__error") reject(msg[1]);
+        if (msg[0] === "__error") reject(msg[1] instanceof Error ? msg[1] : new Error(String(msg[1])));
         else resolve(msg);
       });
       socket.send(JSON.stringify(["EVENT", event]));
@@ -490,14 +492,16 @@ export class Relay {
     throw new Error(`relay refused the pointer: ${note || "no reason given"}`);
   }
 
-  private blossomAuth(verb: string): string {
-    const event = this.signer.sign(
-      KIND_BLOSSOM_AUTH,
-      [["t", verb], ["expiration", String(this.now() + 300)]],
-      "",
-      this.now(),
-    );
-    return `Nostr ${btoa(JSON.stringify(event))}`;
+  private async blossomAuth(verb: string): Promise<string> {
+    const event = await this.signer.signEvent({
+      kind: KIND_BLOSSOM_AUTH,
+      tags: [["t", verb], ["expiration", String(this.now() + 300)]],
+      content: "",
+      created_at: this.now(),
+    });
+    // btoa takes Latin-1 only; the event is ASCII unless a tag is not, and
+    // encoding through UTF-8 first keeps a non-ASCII one from throwing.
+    return `Nostr ${btoa(unescape(encodeURIComponent(JSON.stringify(event))))}`;
   }
 
   /**
@@ -510,7 +514,7 @@ export class Relay {
    * `init` is rebuilt per attempt because an Authorization header carries a
    * signed event with an expiry.
    */
-  private async request(url: string, init: () => RequestInit, sizeHint = 0): Promise<Response> {
+  private async request(url: string, init: () => RequestInit | Promise<RequestInit>, sizeHint = 0): Promise<Response> {
     const timeoutMs = this.fetchTimeoutMs + Math.ceil(sizeHint / 1_000_000) * 10_000;
     let lastError: unknown = null;
     for (let attempt = 0; attempt <= this.retries; attempt++) {
@@ -526,7 +530,7 @@ export class Relay {
         controller.abort();
       }, timeoutMs);
       try {
-        const res = await fetch(url, { ...init(), signal: controller.signal });
+        const res = await fetch(url, { ...(await init()), signal: controller.signal });
         if ((res.status === 429 || res.status >= 500) && res.status !== 507 && attempt < this.retries) {
           lastError = new Error(`${res.status}`);
           continue;
@@ -582,9 +586,9 @@ export class Relay {
   async putBlob(bytes: Uint8Array): Promise<void> {
     const res = await this.request(
       `${this.httpUrl}/upload`,
-      () => ({
+      async () => ({
         method: "PUT",
-        headers: { Authorization: this.blossomAuth("upload") },
+        headers: { Authorization: await this.blossomAuth("upload") },
         body: bytes as BodyInit,
       }),
       bytes.length,
@@ -623,9 +627,9 @@ export class Relay {
    */
   async deleteBlob(id: string): Promise<boolean> {
     try {
-      const res = await this.request(`${this.httpUrl}/${id}`, () => ({
+      const res = await this.request(`${this.httpUrl}/${id}`, async () => ({
         method: "DELETE",
-        headers: { Authorization: this.blossomAuth("delete") },
+        headers: { Authorization: await this.blossomAuth("delete") },
       }));
       return res.ok || res.status === 404;
     } catch {

@@ -1,9 +1,8 @@
 // @ts-nocheck -- vendored; see scripts/vendor-opensync.mjs
 import { Namespace } from "./wasm/opensync_wasm.js";
-import { Relay, Signer, type RelayOptions } from "./relay";
-import { ready, type Endpoint, type Keys } from "./session";
+import { Relay, type RelayOptions } from "./relay";
+import { ready, signerOf, type Endpoint, type Keys } from "./session";
 import * as wasm from "./wasm/opensync_wasm.js";
-import { parseAccountKey } from "./wasm/opensync_wasm.js";
 
 /**
  * A vault of files, synced as one namespace.
@@ -274,8 +273,9 @@ export class VaultSync {
     this.relay = new Relay(
       o.endpoint.ws,
       o.endpoint.http.replace(/\/$/, ""),
-      // Through the Rust decoder, so `nsec1…` and bare hex both work.
-      Signer.fromHex(parseAccountKey(o.keys.accountSecret)),
+      // Through the Rust decoder, so `nsec1…` and bare hex both work — or
+      // the extension or remote signer the account signed in with.
+      signerOf(o.keys),
       o.relay,
     );
     this.concurrency = Math.max(1, o.concurrency ?? 6);
@@ -888,7 +888,7 @@ async function pool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>
     }
   };
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  if (failure !== null) throw failure;
+  if (failure !== null) throw failure instanceof Error ? failure : new Error(typeof failure === "string" ? failure : "a parallel task failed");
 }
 
 function concat(parts: Uint8Array[]): Uint8Array {

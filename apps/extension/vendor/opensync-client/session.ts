@@ -12,7 +12,7 @@ import init, {
   rpIdVerdict,
   Secrets,
 } from "./wasm/opensync_wasm.js";
-import { QuotaError, Relay, Signer } from "./relay";
+import { QuotaError, Relay, Signer, type NostrSigner } from "./relay";
 
 export {
   QuotaError,
@@ -107,8 +107,15 @@ export function ready(source?: WasmSource): Promise<void> {
 }
 
 export interface Keys {
-  /** Identifies the account to the relay. Never sees payload content. */
+  /**
+   * Identifies the account to the relay. Never sees payload content.
+   *
+   * Empty when `signer` is given: an account signed in through an extension
+   * or a remote signer has no secret on this device at all.
+   */
   accountSecret: string;
+  /** Signs for the account instead of `accountSecret`, when present. */
+  signer?: NostrSigner;
   /** Encrypts everything before it leaves the device. */
   namespaceKey: string;
 }
@@ -189,11 +196,7 @@ export class Payload {
     // with a reason rather than producing a vault nobody can read.
     return new Payload(
       new Namespace(keys.namespaceKey),
-      new Relay(
-        endpoint.ws,
-        endpoint.http.replace(/\/$/, ""),
-        Signer.fromHex(parseAccountKey(keys.accountSecret)),
-      ),
+      new Relay(endpoint.ws, endpoint.http.replace(/\/$/, ""), signerOf(keys)),
       namespace,
       files,
     );
@@ -366,6 +369,13 @@ export class Payload {
     for (const id of stranded) if (await this.relay.deleteBlob(id)) swept += 1;
     return { stranded: stranded.size, swept };
   }
+}
+
+/** The signer for a set of keys: the one given, or one made from the secret. */
+export function signerOf(keys: Keys): NostrSigner {
+  if (keys.signer) return keys.signer;
+  if (!keys.accountSecret) throw new Error("this device has no account key and no signer");
+  return Signer.fromHex(parseAccountKey(keys.accountSecret));
 }
 
 function concat(parts: Uint8Array[]): Uint8Array {
