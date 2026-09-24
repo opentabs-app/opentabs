@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: cs) =====
+Nový panel stránek
+Seskupení podle webu
+Zavírání stránek panelu
+Denní úkoly zaměření
+Spouštěč webových aplikací
+Přehled všech oken
+Lokální organizér stránek
+
+===== OVERVIEW (CHROME) (locale: cs) =====
+OpenTabs je pracovní prostor nové karty zaměřený na soukromí, který vám pomáhá zobrazovat, organizovat a spravovat otevřené karty, aniž by se vaše aktivita v prohlížeči odesílala na vzdálenou službu. Seskupování a řazení karet probíhá lokálně v rozšíření, takže vaše karty zůstávají ve vašem prohlížeči.
+
+FUNKCE
+
+• Zobrazení otevřených karet z více oken prohlížeče na jednom místě
+• Automatické seskupování karet podle webu
+• Zavírání karet přímo z panelu
+• Nalezení a zavření duplicitních stránek
+• Sloučení karet z více oken
+• Zaznamenávání denního zaměření pomocí úkolů a vnořených kroků
+• Zachování postupu úkolů po obnovení stránky
+• Spouštění často používaných webových aplikací
+• Přidání konfigurovatelných karet pro počasí, kalendáře, záložky, trhy, témata a další
+• Export a obnovení konfigurace pomocí přenositelného konfiguračního řetězce
+
+Základní správa karet a funkce Focus fungují bez účtu. Účet je potřeba pouze pro komunitní akce, jako je publikování nebo lajkování sdílených packů.
+
+OpenTabs je zdarma a open source. Je navržen pro rychlý zážitek z nové karty, s lokálním zpracováním pro organizaci karet a aktualizacemi na pozadí pro volitelné informační karty.
+
+K dispozici pro prohlížeče založené na Chromiu a pro Firefox. Tento test ověřil sestavení Chromia v Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: cs) =====
+OpenTabs je pracovní prostor nové karty zaměřený na soukromí, který vám pomáhá zobrazovat, organizovat a spravovat otevřené karty, aniž by se vaše aktivita v prohlížeči odesílala na vzdálenou službu. Seskupování a řazení karet probíhá lokálně v rozšíření, takže vaše karty zůstávají ve vašem prohlížeči.
+
+FUNKCE
+
+• Zobrazení otevřených karet z více oken prohlížeče na jednom místě
+• Automatické seskupování karet podle webu
+• Zavírání karet přímo z panelu
+• Nalezení a zavření duplicitních stránek
+• Sloučení karet z více oken
+• Zaznamenávání denního zaměření pomocí úkolů a vnořených kroků
+• Zachování postupu úkolů po obnovení stránky
+• Spouštění často používaných webových aplikací
+• Přidání konfigurovatelných karet pro počasí, kalendáře, záložky, trhy, témata a další
+• Export a obnovení konfigurace pomocí přenositelného konfiguračního řetězce
+
+Základní správa karet a funkce Focus fungují bez účtu. Účet je potřeba pouze pro komunitní akce, jako je publikování nebo lajkování sdílených packů.
+
+OpenTabs je zdarma a open source. Je navržen pro rychlý zážitek z nové karty, s lokálním zpracováním pro organizaci karet a aktualizacemi na pozadí pro volitelné informační karty.
+
+K dispozici pro prohlížeče založené na Chromiu. Tento test ověřil sestavení Chromia v Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/

@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: pt_PT) =====
+Painel inicial
+Agrupar por site
+Fechar páginas no painel
+Tarefas foco diário
+Lançador apps web
+Vista todas janelas
+Organizador local rápido
+
+===== OVERVIEW (CHROME) (locale: pt_PT) =====
+OpenTabs é um espaço de trabalho para novos separadores com foco na privacidade, que o ajuda a ver, organizar e gerir os seus separadores abertos sem enviar a sua atividade de navegação para um serviço remoto. O agrupamento e a classificação dos separadores são executados localmente na extensão, pelo que os seus separadores permanecem no seu navegador.
+
+FUNCIONALIDADES
+
+• Veja separadores abertos de várias janelas do navegador num só local
+• Agrupe separadores automaticamente por site
+• Feche separadores diretamente a partir do painel
+• Encontre e feche páginas duplicadas
+• Funda separadores de várias janelas
+• Registe o seu foco diário com tarefas e subpassos
+• Mantenha o progresso das tarefas depois de atualizar a página
+• Abra as apps web que utiliza com frequência
+• Adicione cartões configuráveis de meteorologia, calendários, marcadores, mercados, tópicos e muito mais
+• Exporte e restaure a sua configuração com uma cadeia de configuração portátil
+
+A gestão de separadores e as funcionalidades do Focus funcionam sem conta. Só é necessária uma conta para ações da comunidade, como publicar ou gostar de packs partilhados.
+
+O OpenTabs é gratuito e de código aberto. Foi concebido para uma experiência de novo separador rápida, com processamento local para a organização dos separadores e atualizações em segundo plano para os cartões de informação opcionais.
+
+Disponível para navegadores baseados em Chromium e Firefox. Este teste verificou a compilação Chromium no Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: pt_PT) =====
+OpenTabs é um espaço de trabalho para novos separadores com foco na privacidade, que o ajuda a ver, organizar e gerir os seus separadores abertos sem enviar a sua atividade de navegação para um serviço remoto. O agrupamento e a classificação dos separadores são executados localmente na extensão, pelo que os seus separadores permanecem no seu navegador.
+
+FUNCIONALIDADES
+
+• Veja separadores abertos de várias janelas do navegador num só local
+• Agrupe separadores automaticamente por site
+• Feche separadores diretamente a partir do painel
+• Encontre e feche páginas duplicadas
+• Funda separadores de várias janelas
+• Registe o seu foco diário com tarefas e subpassos
+• Mantenha o progresso das tarefas depois de atualizar a página
+• Abra as apps web que utiliza com frequência
+• Adicione cartões configuráveis de meteorologia, calendários, marcadores, mercados, tópicos e muito mais
+• Exporte e restaure a sua configuração com uma cadeia de configuração portátil
+
+A gestão de separadores e as funcionalidades do Focus funcionam sem conta. Só é necessária uma conta para ações da comunidade, como publicar ou gostar de packs partilhados.
+
+O OpenTabs é gratuito e de código aberto. Foi concebido para uma experiência de novo separador rápida, com processamento local para a organização dos separadores e atualizações em segundo plano para os cartões de informação opcionais.
+
+Disponível para navegadores baseados em Chromium. Este teste verificou a compilação Chromium no Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/

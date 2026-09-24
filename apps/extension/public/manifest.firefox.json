@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "OpenTabs",
+  "name": "__MSG_name__",
   "version": "0.1.0",
-  "description": "Your open tabs, grouped \u2014 above a calm briefing you choose. No account, no tracking.",
+  "description": "__MSG_description__",
+  "default_locale": "en",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
   },

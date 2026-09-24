@@ -1,0 +1,8 @@
+{
+  "name": {
+    "message": "Gestionnaire d'onglets - Doublons | OpenTabs"
+  },
+  "description": {
+    "message": "Groupe les onglets par site, ferme les doublons, fusionne les fenêtres et suit vos tâches du jour, en local."
+  }
+}

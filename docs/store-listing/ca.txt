@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: ca) =====
+Tauler inicial
+Agrupar per lloc
+Tancar pàgines al tauler
+Tasques d'enfocament diari
+Llançador d'aplicacions web
+Vista totes finestres
+Organitzador local ràpid
+
+===== OVERVIEW (CHROME) (locale: ca) =====
+OpenTabs és un espai de treball per a pestanyes noves centrat en la privadesa que t'ajuda a veure, organitzar i gestionar les teves pestanyes obertes sense enviar la teva activitat de navegació a cap servei remot. L'agrupació i la classificació de les pestanyes s'executen localment a l'extensió, de manera que les teves pestanyes es queden al teu navegador.
+
+FUNCIONALITATS
+
+• Visualitza les pestanyes obertes de diverses finestres del navegador en un sol lloc
+• Agrupa pestanyes automàticament per lloc web
+• Tanca pestanyes directament des del tauler
+• Troba i tanca pàgines duplicades
+• Fusiona pestanyes de diverses finestres
+• Registra el teu focus diari amb tasques i subpassos
+• Manté el progrés de les tasques després de recarregar la pàgina
+• Obre les aplicacions web que fas servir sovint
+• Afegeix targetes configurables de temps, calendaris, adreces d'interès, mercats, temes i més
+• Exporta i restaura la teva configuració amb una cadena de configuració portàtil
+
+La gestió bàsica de pestanyes i les funcions de Focus funcionen sense compte. Només cal un compte per a accions comunitàries com publicar o donar «m'agrada» a packs compartits.
+
+OpenTabs és gratuït i de codi obert. Està dissenyat per oferir una experiència de pestanya nova ràpida, amb processament local per a l'organització de pestanyes i actualitzacions en segon pla per a les targetes d'informació opcionals.
+
+Disponible per a navegadors basats en Chromium i per a Firefox. Aquesta prova ha verificat la versió Chromium a Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: ca) =====
+OpenTabs és un espai de treball per a pestanyes noves centrat en la privadesa que t'ajuda a veure, organitzar i gestionar les teves pestanyes obertes sense enviar la teva activitat de navegació a cap servei remot. L'agrupació i la classificació de les pestanyes s'executen localment a l'extensió, de manera que les teves pestanyes es queden al teu navegador.
+
+FUNCIONALITATS
+
+• Visualitza les pestanyes obertes de diverses finestres del navegador en un sol lloc
+• Agrupa pestanyes automàticament per lloc web
+• Tanca pestanyes directament des del tauler
+• Troba i tanca pàgines duplicades
+• Fusiona pestanyes de diverses finestres
+• Registra el teu focus diari amb tasques i subpassos
+• Manté el progrés de les tasques després de recarregar la pàgina
+• Obre les aplicacions web que fas servir sovint
+• Afegeix targetes configurables de temps, calendaris, adreces d'interès, mercats, temes i més
+• Exporta i restaura la teva configuració amb una cadena de configuració portàtil
+
+La gestió bàsica de pestanyes i les funcions de Focus funcionen sense compte. Només cal un compte per a accions comunitàries com publicar o donar «m'agrada» a packs compartits.
+
+OpenTabs és gratuït i de codi obert. Està dissenyat per oferir una experiència de pestanya nova ràpida, amb processament local per a l'organització de pestanyes i actualitzacions en segon pla per a les targetes d'informació opcionals.
+
+Disponible per a navegadors basats en Chromium. Aquesta prova ha verificat la versió Chromium a Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/

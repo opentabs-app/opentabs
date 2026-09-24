@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: pt_BR) =====
+Painel inicial
+Agrupar por site
+Fechar páginas no painel
+Tarefas foco diário
+Lançador apps web
+Vista todas janelas
+Organizador local rápido
+
+===== OVERVIEW (CHROME) (locale: pt_BR) =====
+OpenTabs é um espaço de trabalho de nova aba com foco em privacidade que ajuda você a ver, organizar e agir sobre suas abas abertas sem enviar sua atividade de navegação para um serviço remoto. O agrupamento e a classificação das abas são feitos localmente na extensão, então suas abas permanecem no seu navegador.
+
+RECURSOS
+
+• Veja abas abertas de várias janelas do navegador em um só lugar
+• Agrupe abas automaticamente por site
+• Feche abas diretamente pelo painel
+• Encontre e feche páginas duplicadas
+• Mescle abas de várias janelas
+• Registre seu foco diário com tarefas e subetapas
+• Mantenha o progresso das tarefas após atualizar a página
+• Abra os apps web que você usa com frequência
+• Adicione cartões configuráveis de clima, calendários, favoritos, mercados, tópicos e mais
+• Exporte e restaure sua configuração com uma string de configuração portátil
+
+O gerenciamento de abas e os recursos de Focus funcionam sem conta. Uma conta só é necessária para ações da comunidade, como publicar ou curtir packs compartilhados.
+
+OpenTabs é gratuito e de código aberto. Foi projetado para uma experiência rápida de nova aba, com processamento local para a organização das abas e atualizações em segundo plano para os cartões de informação opcionais.
+
+Disponível para navegadores baseados em Chromium e Firefox. Este teste verificou a versão Chromium no Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: pt_BR) =====
+OpenTabs é um espaço de trabalho de nova aba com foco em privacidade que ajuda você a ver, organizar e agir sobre suas abas abertas sem enviar sua atividade de navegação para um serviço remoto. O agrupamento e a classificação das abas são feitos localmente na extensão, então suas abas permanecem no seu navegador.
+
+RECURSOS
+
+• Veja abas abertas de várias janelas do navegador em um só lugar
+• Agrupe abas automaticamente por site
+• Feche abas diretamente pelo painel
+• Encontre e feche páginas duplicadas
+• Mescle abas de várias janelas
+• Registre seu foco diário com tarefas e subetapas
+• Mantenha o progresso das tarefas após atualizar a página
+• Abra os apps web que você usa com frequência
+• Adicione cartões configuráveis de clima, calendários, favoritos, mercados, tópicos e mais
+• Exporte e restaure sua configuração com uma string de configuração portátil
+
+O gerenciamento de abas e os recursos de Focus funcionam sem conta. Uma conta só é necessária para ações da comunidade, como publicar ou curtir packs compartilhados.
+
+OpenTabs é gratuito e de código aberto. Foi projetado para uma experiência rápida de nova aba, com processamento local para a organização das abas e atualizações em segundo plano para os cartões de informação opcionais.
+
+Disponível para navegadores baseados em Chromium. Este teste verificou a versão Chromium no Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
