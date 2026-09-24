@@ -320,7 +320,7 @@ test("sharing strips secrets before anything can leave the browser", async ({
     chrome.runtime.sendMessage({
       type: "packFromInstance",
       instanceId: "ai",
-      author: "darius",
+      author: "maintainer",
       description: "Twelve good AI sources.",
     }),
   );
@@ -328,7 +328,7 @@ test("sharing strips secrets before anything can leave the browser", async ({
   expect(opts.apiKey).toBeUndefined();
   expect(opts.lat).toBeUndefined();
   expect(opts.span).toBeUndefined();
-  expect(packed.pack.author).toBe("darius");
+  expect(packed.pack.author).toBe("maintainer");
 });
 
 test("the share dialog can copy a pack without any account at all", async ({

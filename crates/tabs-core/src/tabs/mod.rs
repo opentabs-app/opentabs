@@ -383,7 +383,7 @@ pub fn group(tabs: &[Tab]) -> Grouping {
         // and localhost:8080 are different projects. True, and it produced a
         // column of one-tab groups on exactly the machine that has the most
         // tabs open — anyone running a few services at once got a header and a
-        // count per port and no grouping at all. Darius asked for them
+        // count per port and no grouping at all. the maintainer asked for them
         // together, which is the right call for the common case.
         //
         // What the split was protecting is that the ports stay *legible*, and

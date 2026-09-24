@@ -309,7 +309,7 @@ fn exporting_a_group_strips_it_on_the_way_out() {
     let id = ai.id.clone();
     ai.opts = json!({ "query": "ai", "apiKey": "sk-live", "lat": 1.0, "span": 3 });
 
-    let pack = pack_from_instance(&cfg, &id, "darius", "Twelve good AI sources.").unwrap();
+    let pack = pack_from_instance(&cfg, &id, "maintainer", "Twelve good AI sources.").unwrap();
     let opts = pack.instances[0].opts.as_object().unwrap();
     assert!(opts.contains_key("query"));
     assert!(!opts.contains_key("apiKey"));
