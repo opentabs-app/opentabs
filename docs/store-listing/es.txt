@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: es) =====
+Panel de inicio
+Agrupar por sitio
+Cerrar páginas panel
+Tareas enfoque diario
+Lanzador apps web
+Vista todas ventanas
+Organizador local rápido
+
+===== OVERVIEW (CHROME) (locale: es) =====
+OpenTabs es un espacio de trabajo para pestañas nuevas centrado en la privacidad que te ayuda a ver, organizar y gestionar tus pestañas abiertas sin enviar tu actividad de navegación a un servicio remoto. La agrupación y clasificación de pestañas se ejecuta localmente en la extensión, por lo que tus pestañas permanecen en tu navegador.
+
+FUNCIONES
+
+• Ver pestañas abiertas de varias ventanas del navegador en un solo lugar
+• Agrupar pestañas automáticamente por sitio web
+• Cerrar pestañas directamente desde el panel
+• Encontrar y cerrar páginas duplicadas
+• Fusionar pestañas de varias ventanas
+• Registrar tu enfoque diario con tareas y subpasos
+• Mantener el progreso de las tareas después de recargar la página
+• Abrir las apps web que usas con frecuencia
+• Añadir tarjetas configurables de clima, calendarios, marcadores, mercados, temas y más
+• Exportar y restaurar tu configuración con una cadena de configuración portátil
+
+La gestión de pestañas y las funciones de Focus funcionan sin cuenta. Solo se necesita una cuenta para acciones comunitarias como publicar o dar me gusta a packs compartidos.
+
+OpenTabs es gratuito y de código abierto. Está diseñado para una experiencia de nueva pestaña rápida, con procesamiento local para la organización de pestañas y actualizaciones en segundo plano para las tarjetas de información opcionales.
+
+Disponible para navegadores basados en Chromium y Firefox. Esta prueba verificó la compilación de Chromium en Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: es) =====
+OpenTabs es un espacio de trabajo para pestañas nuevas centrado en la privacidad que te ayuda a ver, organizar y gestionar tus pestañas abiertas sin enviar tu actividad de navegación a un servicio remoto. La agrupación y clasificación de pestañas se ejecuta localmente en la extensión, por lo que tus pestañas permanecen en tu navegador.
+
+FUNCIONES
+
+• Ver pestañas abiertas de varias ventanas del navegador en un solo lugar
+• Agrupar pestañas automáticamente por sitio web
+• Cerrar pestañas directamente desde el panel
+• Encontrar y cerrar páginas duplicadas
+• Fusionar pestañas de varias ventanas
+• Registrar tu enfoque diario con tareas y subpasos
+• Mantener el progreso de las tareas después de recargar la página
+• Abrir las apps web que usas con frecuencia
+• Añadir tarjetas configurables de clima, calendarios, marcadores, mercados, temas y más
+• Exportar y restaurar tu configuración con una cadena de configuración portátil
+
+La gestión de pestañas y las funciones de Focus funcionan sin cuenta. Solo se necesita una cuenta para acciones comunitarias como publicar o dar me gusta a packs compartidos.
+
+OpenTabs es gratuito y de código abierto. Está diseñado para una experiencia de nueva pestaña rápida, con procesamiento local para la organización de pestañas y actualizaciones en segundo plano para las tarjetas de información opcionales.
+
+Disponible para navegadores basados en Chromium. Esta prueba verificó la compilación de Chromium en Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/

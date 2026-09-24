@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: da) =====
+Dashboard ny fane
+Gruppér faner efter websted
+Luk faner fra dashboard
+Dagens fokusopgaver
+Webapp-launcher
+Overblik over alle vinduer
+Lokal faneorganisator
+
+===== OVERVIEW (CHROME) (locale: da) =====
+OpenTabs er et privatlivsvenligt arbejdsområde til nye faner, der hjælper dig med at se, organisere og handle på dine åbne faner uden at sende din browsingaktivitet til en ekstern tjeneste. Gruppering og rangering af faner kører lokalt i udvidelsen, så dine faner forbliver i din browser.
+
+FUNKTIONER
+
+• Se åbne faner fra flere browservinduer ét sted
+• Gruppér faner automatisk efter websted
+• Luk faner direkte fra dashboardet
+• Find og luk duplikerede sider
+• Flet faner fra flere vinduer
+• Registrer dit daglige fokus med opgaver og indlejrede trin
+• Bevar opgavefremskridt efter genindlæsning af siden
+• Åbn dine ofte brugte webapps
+• Tilføj konfigurerbare kort til vejr, kalendere, bogmærker, markeder, emner og mere
+• Eksportér og gendan din konfiguration med en transportabel konfigurationsstreng
+
+Kernefunktionerne til fanehåndtering og Focus fungerer uden konto. En konto er kun nødvendig til fællesskabshandlinger som at udgive eller like delte packs.
+
+OpenTabs er gratis og open source. Det er designet til en hurtig ny-fane-oplevelse med lokal behandling til faneorganisering og baggrundsopdateringer til valgfrie infokort.
+
+Tilgængelig til Chromium-baserede browsere og Firefox. Denne test verificerede Chromium-builden i Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: da) =====
+OpenTabs er et privatlivsvenligt arbejdsområde til nye faner, der hjælper dig med at se, organisere og handle på dine åbne faner uden at sende din browsingaktivitet til en ekstern tjeneste. Gruppering og rangering af faner kører lokalt i udvidelsen, så dine faner forbliver i din browser.
+
+FUNKTIONER
+
+• Se åbne faner fra flere browservinduer ét sted
+• Gruppér faner automatisk efter websted
+• Luk faner direkte fra dashboardet
+• Find og luk duplikerede sider
+• Flet faner fra flere vinduer
+• Registrer dit daglige fokus med opgaver og indlejrede trin
+• Bevar opgavefremskridt efter genindlæsning af siden
+• Åbn dine ofte brugte webapps
+• Tilføj konfigurerbare kort til vejr, kalendere, bogmærker, markeder, emner og mere
+• Eksportér og gendan din konfiguration med en transportabel konfigurationsstreng
+
+Kernefunktionerne til fanehåndtering og Focus fungerer uden konto. En konto er kun nødvendig til fællesskabshandlinger som at udgive eller like delte packs.
+
+OpenTabs er gratis og open source. Det er designet til en hurtig ny-fane-oplevelse med lokal behandling til faneorganisering og baggrundsopdateringer til valgfrie infokort.
+
+Tilgængelig til Chromium-baserede browsere. Denne test verificerede Chromium-builden i Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/

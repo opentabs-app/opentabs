@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: fr) =====
+Tableau de bord
+Grouper par site
+Fermer depuis tableau
+Focus quotidien
+Lanceur d'applications web
+Vue toutes fenêtres
+Organisateur local
+
+===== OVERVIEW (CHROME) (locale: fr) =====
+OpenTabs est un espace de travail pour les nouveaux onglets, axé sur la confidentialité, qui vous aide à voir, organiser et gérer vos onglets ouverts sans envoyer votre activité de navigation à un service distant. Le regroupement et le classement des onglets s'effectuent localement dans l'extension, afin que vos onglets restent dans votre navigateur.
+
+FONCTIONNALITÉS
+
+• Afficher les onglets ouverts de plusieurs fenêtres du navigateur au même endroit
+• Regrouper automatiquement les onglets par site
+• Fermer les onglets directement depuis le tableau de bord
+• Trouver et fermer les pages en double
+• Fusionner les onglets de plusieurs fenêtres
+• Suivre votre focus quotidien avec des tâches et des sous-étapes
+• Conserver la progression des tâches après actualisation de la page
+• Lancer les applications web fréquemment utilisées
+• Ajouter des cartes configurables pour la météo, les calendriers, les favoris, les marchés, l'actualité et plus encore
+• Exporter et restaurer votre configuration via une chaîne de configuration portable
+
+La gestion des onglets et les fonctionnalités Focus fonctionnent sans compte. Un compte n'est nécessaire que pour les actions communautaires comme la publication ou le like de packs partagés.
+
+OpenTabs est gratuit et open source. Il est conçu pour une expérience de nouvel onglet rapide, avec un traitement local pour l'organisation des onglets et des mises à jour en arrière-plan pour les cartes d'information optionnelles.
+
+Disponible pour les navigateurs basés sur Chromium et Firefox. Ce test a vérifié la version Chromium sur Microsoft Edge.
+
+GitHub : https://github.com/opentabs-app/OpenTabs/
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: fr) =====
+OpenTabs est un espace de travail pour les nouveaux onglets, axé sur la confidentialité, qui vous aide à voir, organiser et gérer vos onglets ouverts sans envoyer votre activité de navigation à un service distant. Le regroupement et le classement des onglets s'effectuent localement dans l'extension, afin que vos onglets restent dans votre navigateur.
+
+FONCTIONNALITÉS
+
+• Afficher les onglets ouverts de plusieurs fenêtres du navigateur au même endroit
+• Regrouper automatiquement les onglets par site
+• Fermer les onglets directement depuis le tableau de bord
+• Trouver et fermer les pages en double
+• Fusionner les onglets de plusieurs fenêtres
+• Suivre votre focus quotidien avec des tâches et des sous-étapes
+• Conserver la progression des tâches après actualisation de la page
+• Lancer les applications web fréquemment utilisées
+• Ajouter des cartes configurables pour la météo, les calendriers, les favoris, les marchés, l'actualité et plus encore
+• Exporter et restaurer votre configuration via une chaîne de configuration portable
+
+La gestion des onglets et les fonctionnalités Focus fonctionnent sans compte. Un compte n'est nécessaire que pour les actions communautaires comme la publication ou le like de packs partagés.
+
+OpenTabs est gratuit et open source. Il est conçu pour une expérience de nouvel onglet rapide, avec un traitement local pour l'organisation des onglets et des mises à jour en arrière-plan pour les cartes d'information optionnelles.
+
+Disponible pour les navigateurs basés sur Chromium. Ce test a vérifié la version Chromium sur Microsoft Edge.
+
+GitHub : https://github.com/opentabs-app/OpenTabs/

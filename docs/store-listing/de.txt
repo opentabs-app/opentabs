@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: de) =====
+Neues Seiten-Dashboard
+Nach Website gruppieren
+Seiten vom Dashboard schließen
+Tägliche Fokus-Aufgaben
+Web-App-Starter
+Kompletter Überblick
+Lokaler Seiten-Organizer
+
+===== OVERVIEW (CHROME) (locale: de) =====
+OpenTabs ist ein datenschutzfreundlicher Arbeitsbereich für neue Tabs, der dir hilft, deine geöffneten Tabs zu sehen, zu organisieren und zu verwalten, ohne dass deine Browsing-Aktivität an einen externen Dienst gesendet wird. Die Gruppierung und Einstufung der Tabs läuft lokal in der Erweiterung, sodass deine Tabs in deinem Browser bleiben.
+
+FUNKTIONEN
+
+• Geöffnete Tabs aus mehreren Browserfenstern an einem Ort anzeigen
+• Tabs automatisch nach Website gruppieren
+• Tabs direkt über das Dashboard schließen
+• Doppelte Seiten finden und schließen
+• Tabs aus mehreren Fenstern zusammenführen
+• Deinen täglichen Fokus mit Aufgaben und verschachtelten Schritten festhalten
+• Aufgabenfortschritt nach dem Neuladen der Seite beibehalten
+• Häufig genutzte Web-Apps starten
+• Konfigurierbare Karten für Wetter, Kalender, Lesezeichen, Märkte, Themen und mehr hinzufügen
+• Konfiguration mit einer portablen Konfigurationszeichenfolge exportieren und wiederherstellen
+
+Die Kernfunktionen zur Tab-Verwaltung und der Fokus-Bereich funktionieren ohne Konto. Ein Konto wird nur für Community-Aktionen wie das Veröffentlichen oder Liken geteilter Packs benötigt.
+
+OpenTabs ist kostenlos und quelloffen. Es ist auf eine schnelle Neue-Tab-Erfahrung ausgelegt, mit lokaler Verarbeitung für die Tab-Organisation und Hintergrundaktualisierungen für optionale Infokarten.
+
+Verfügbar für Chromium-basierte Browser und Firefox. Dieser Test wurde mit dem Chromium-Build in Microsoft Edge durchgeführt.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: de) =====
+OpenTabs ist ein datenschutzfreundlicher Arbeitsbereich für neue Tabs, der dir hilft, deine geöffneten Tabs zu sehen, zu organisieren und zu verwalten, ohne dass deine Browsing-Aktivität an einen externen Dienst gesendet wird. Die Gruppierung und Einstufung der Tabs läuft lokal in der Erweiterung, sodass deine Tabs in deinem Browser bleiben.
+
+FUNKTIONEN
+
+• Geöffnete Tabs aus mehreren Browserfenstern an einem Ort anzeigen
+• Tabs automatisch nach Website gruppieren
+• Tabs direkt über das Dashboard schließen
+• Doppelte Seiten finden und schließen
+• Tabs aus mehreren Fenstern zusammenführen
+• Deinen täglichen Fokus mit Aufgaben und verschachtelten Schritten festhalten
+• Aufgabenfortschritt nach dem Neuladen der Seite beibehalten
+• Häufig genutzte Web-Apps starten
+• Konfigurierbare Karten für Wetter, Kalender, Lesezeichen, Märkte, Themen und mehr hinzufügen
+• Konfiguration mit einer portablen Konfigurationszeichenfolge exportieren und wiederherstellen
+
+Die Kernfunktionen zur Tab-Verwaltung und der Fokus-Bereich funktionieren ohne Konto. Ein Konto wird nur für Community-Aktionen wie das Veröffentlichen oder Liken geteilter Packs benötigt.
+
+OpenTabs ist kostenlos und quelloffen. Es ist auf eine schnelle Neue-Tab-Erfahrung ausgelegt, mit lokaler Verarbeitung für die Tab-Organisation und Hintergrundaktualisierungen für optionale Infokarten.
+
+Verfügbar für Chromium-basierte Browser. Dieser Test wurde mit dem Chromium-Build in Microsoft Edge durchgeführt.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/

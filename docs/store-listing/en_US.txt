@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: en_US) =====
+Start page dashboard
+Group by website
+Close pages dashboard
+Daily focus tasks
+Web app launcher
+All windows view
+Local browser organizer
+
+===== OVERVIEW (CHROME) (locale: en_US) =====
+OpenTabs is a privacy-first new-tab workspace that helps you see, organize, and act on your open tabs without sending your browsing activity to a remote service. Tab grouping and ranking run locally in the extension, so your tabs stay in your browser.
+
+FEATURES
+
+• View open tabs from multiple browser windows in one place
+• Group tabs automatically by website
+• Close tabs directly from the dashboard
+• Find and close duplicate pages
+• Merge tabs from multiple windows
+• Capture your daily focus with tasks and nested steps
+• Keep task progress after refreshing the page
+• Launch frequently used web apps
+• Add configurable cards for weather, calendars, bookmarks, markets, topics, and more
+• Export and restore your configuration with a portable config string
+
+Core tab management and Focus features work without an account. An account is only needed for community actions such as publishing or liking shared packs.
+
+OpenTabs is free and open source. It is designed for a fast new-tab experience, with local processing for tab organization and background updates for optional information cards.
+
+Available for Chromium-based browsers and Firefox. This test verified the Chromium build in Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: en_US) =====
+OpenTabs is a privacy-first new-tab workspace that helps you see, organize, and act on your open tabs without sending your browsing activity to a remote service. Tab grouping and ranking run locally in the extension, so your tabs stay in your browser.
+
+FEATURES
+
+• View open tabs from multiple browser windows in one place
+• Group tabs automatically by website
+• Close tabs directly from the dashboard
+• Find and close duplicate pages
+• Merge tabs from multiple windows
+• Capture your daily focus with tasks and nested steps
+• Keep task progress after refreshing the page
+• Launch frequently used web apps
+• Add configurable cards for weather, calendars, bookmarks, markets, topics, and more
+• Export and restore your configuration with a portable config string
+
+Core tab management and Focus features work without an account. An account is only needed for community actions such as publishing or liking shared packs.
+
+OpenTabs is free and open source. It is designed for a fast new-tab experience, with local processing for tab organization and background updates for optional information cards.
+
+Available for Chromium-based browsers. This test verified the Chromium build in Microsoft Edge.
+
+GitHub: https://github.com/opentabs-app/OpenTabs/
