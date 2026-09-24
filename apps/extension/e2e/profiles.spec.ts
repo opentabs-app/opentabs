@@ -66,7 +66,9 @@ test("in Edge, the profile button opens Settings → Profiles, not an error page
   const dist = resolve(dirname(fileURLToPath(import.meta.url)), "..", "dist");
   const context = await chromium.launchPersistentContext("", {
     channel: "msedge",
-    headless: false,
+    // Headless by default, like the shared fixture: Playwright's new headless
+    // loads extensions, and a CI runner has Edge installed but no display, so
+    // a visible window fails there with "Missing X server or $DISPLAY".
     args: [`--disable-extensions-except=${dist}`, `--load-extension=${dist}`],
   });
   try {
