@@ -132,10 +132,10 @@ fn every_search_word_must_match_not_merely_one() {
 #[test]
 fn search_covers_the_author_and_the_tags_too() {
     let mut l = listing("x", 1, 0, 0);
-    l.author = "darius".into();
+    l.author = "maintainer".into();
     l.tags = vec!["semiconductors".into()];
     let all = vec![l];
-    assert_eq!(browse(&all, "darius", None, Sort::New, NOW, 0, 9).len(), 1);
+    assert_eq!(browse(&all, "maintainer", None, Sort::New, NOW, 0, 9).len(), 1);
     assert_eq!(
         browse(&all, "semiconductors", None, Sort::New, NOW, 0, 9).len(),
         1
