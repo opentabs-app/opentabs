@@ -4,7 +4,7 @@
  * Icons from pixel math — no image library, no design tool, no binary
  * checked in that nobody can regenerate.
  *
- * A grid of tabs on the OpenApps blue: three bars, the first highlighted,
+ * A grid of tabs on the product's blue: three bars, the first highlighted,
  * which reads as "tabs" at 16px where anything more detailed turns to mud.
  *
  * This module exists because the mark was previously written out inside the
@@ -17,9 +17,9 @@ import { deflateSync } from "node:zlib";
 /**
  * Accent slot 22 — `--slate`, petrol lifted 74% toward white.
  *
- * This was OpenApps blue `#15b9eb` until 8 September 2026, which is slot 2:
- * held by `openinbox` and used by the shipped `opencapture`, so three products
- * wore one hue and none of them knew. See `tokens/ACCENT-SLOTS.md`.
+ * This was `#15b9eb` until 8 September 2026 — slot 2, which two other
+ * products already wore, so three of them shared one hue and none of them
+ * knew. See `tokens/ACCENT-SLOTS.md`.
  *
  * The move is not only bookkeeping. The mark is a fill with white bars on it,
  * and white on the old blue was 2.29:1 — barely a bar at 16px. On slate it is

@@ -70,7 +70,7 @@ export async function startRelay(): Promise<Relay> {
   try {
     child = spawn(bin, [config], { stdio: ["ignore", "ignore", "pipe"] });
   } catch {
-    throw new Error(`cannot start ${bin} — run: cargo build --release -p opensync-relay (in openapps/opensync)`);
+    throw new Error(`cannot start ${bin} — run: cargo build --release -p opensync-relay in the engine checkout beside this repo`);
   }
   let stderr = "";
   child.stderr?.on("data", (d) => (stderr += String(d)));

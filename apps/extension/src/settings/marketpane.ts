@@ -360,7 +360,7 @@ export function openShareDialog(d: Deps, instanceId: string) {
 }
 
 /**
- * Sign in to OpenApps.
+ * Sign in.
  *
  * The worker owns the session — see `background/session.ts` for why, and for
  * why this cannot be a page on our own origin. From here it is two messages:
