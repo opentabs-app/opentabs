@@ -137,7 +137,7 @@ export async function fetchPastedPack(raw: string): Promise<Fetched<Pack>> {
   return fetchPack(id);
 }
 
-/** Publish. Needs a token from OpenApps, held on this device only. */
+/** Publish. Needs an account token, held on this device only. */
 export async function publish(
   pack: Pack,
   token: string,

@@ -573,7 +573,7 @@ function settleSignIn(ok: boolean) {
 ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   const type = (msg as { type?: string })?.type;
 
-  // ---------- OpenApps sign-in ----------
+  // ---------- sign-in ----------
 
   /**
    * The session, relayed from the platform's sign-in page.
