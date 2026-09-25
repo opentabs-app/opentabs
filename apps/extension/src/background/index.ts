@@ -81,7 +81,8 @@ async function writePayload(
   retryAt?: number,
 ) {
   const payloads = await getLocal<Payloads>(KEY.payloads, {});
-  const merged = mergePayload(id, payloads[id], data, TTL[def] ?? 3600, now(), error, configHash);
+  // Web Apps is the one group whose empty is a result rather than a failure.
+  const merged = mergePayload(id, payloads[id], data, TTL[def] ?? 3600, now(), error, configHash, def === "apps");
   payloads[id] = retryAt ? { ...merged, retry_at: retryAt } : merged;
   await setLocal(KEY.payloads, payloads);
 }

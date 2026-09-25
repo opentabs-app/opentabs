@@ -70,6 +70,33 @@ describe("mergePayload", () => {
   });
 });
 
+describe("mergePayload when empty is a real answer", () => {
+  /**
+   * The Web Apps group, after the suite was taken out of it. The card holds
+   * what the reader put there, so "nothing" has to be storable — and it has
+   * to reach a copy that is already installed, whose stored payload still
+   * lists ten products the server has stopped sending.
+   */
+  it("replaces stored data with nothing, instead of keeping it", () => {
+    const prev = good(NOW - 600);
+    expect(mergePayload("apps", prev, [], TTL, NOW, undefined, undefined, true).data).toEqual([]);
+  });
+
+  it("stamps the empty answer with this refresh, so the group still renders", () => {
+    // generated_at of 0 reads as "never fetched", and the new tab page hides
+    // a group it has never seen data for — which would hide the empty state
+    // that is the only way to add an app.
+    const next = mergePayload("apps", good(NOW - 600), [], TTL, NOW, undefined, undefined, true);
+    expect(next.generated_at).toBe(NOW);
+    expect(next.stale_after).toBe(NOW + TTL);
+  });
+
+  it("leaves every other group's protection alone", () => {
+    const prev = good(NOW - 600);
+    expect(mergePayload("ai", prev, [], TTL, NOW).data).toEqual(prev.data);
+  });
+});
+
 describe("mergePayload with a config fingerprint", () => {
   const withHash = (at: number, hash: string): Payload => ({
     instanceId: "ai",

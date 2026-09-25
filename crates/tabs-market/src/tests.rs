@@ -135,7 +135,10 @@ fn search_covers_the_author_and_the_tags_too() {
     l.author = "maintainer".into();
     l.tags = vec!["semiconductors".into()];
     let all = vec![l];
-    assert_eq!(browse(&all, "maintainer", None, Sort::New, NOW, 0, 9).len(), 1);
+    assert_eq!(
+        browse(&all, "maintainer", None, Sort::New, NOW, 0, 9).len(),
+        1
+    );
     assert_eq!(
         browse(&all, "semiconductors", None, Sort::New, NOW, 0, 9).len(),
         1
