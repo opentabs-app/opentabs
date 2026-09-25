@@ -12,6 +12,7 @@ import { ext, KEY, getLocal, getSync, setLocal, setSync } from "../lib/ext";
 import { type Cooldowns, pruneCooldowns } from "../lib/backoff";
 import { DEFAULT_CLEAR_HOURS, sweepFocus } from "../lib/focus";
 import { configHashOf, mergePayload, withoutErrors } from "../lib/payload";
+import { repairStoredDue, wallNow, wallToEpoch } from "../lib/walltime";
 import type { CalEvent, Config, Instance, LocalState, Payloads, Todo } from "../lib/types";
 import { conditionalGet, keepAlive } from "./fetcher";
 import {
@@ -344,6 +345,28 @@ async function fireDueReminders() {
 }
 
 /** On browser startup, one digest of everything that came due while away. */
+/**
+ * Repair to-do due dates stored before 1.0.3.
+ *
+ * Until then a due date was civil time stored as though it were an instant,
+ * so every reader outside UTC has items at the wrong hour and reminders to
+ * match. The same conversion the parser now goes through fixes them, applied
+ * once and recorded, because applying it twice would move them again.
+ *
+ * Their zone now stands in for their zone then. Someone who typed a to-do in
+ * another country keeps an hours-out date, which is the most a number that
+ * never recorded where it was typed can give back.
+ */
+async function repairTodoDueDates(): Promise<void> {
+  const local = await getLocal<LocalState>(KEY.local, {} as LocalState);
+  if (local.todoDuesLocalised) return;
+  const todos = local.todos ?? [];
+  const fixed = todos.map((t) => (t.due ? { ...t, due: repairStoredDue(t.due) } : t));
+  await setLocal(KEY.local, { ...local, todos: fixed, todoDuesLocalised: true });
+  // The reminder was scheduled from the old number.
+  if (fixed.some((t) => t.due)) await scheduleNextReminder();
+}
+
 async function sweepOverdue() {
   const local = await getLocal<LocalState>(KEY.local, {});
   const overdue = (local.todos ?? []).filter((t: Todo) => !t.done && t.due && t.due * 1000 < Date.now());
@@ -441,6 +464,7 @@ ext.runtime.onInstalled.addListener(() => {
   // at the old ones is not carried across. Re-registering here is what stops
   // "Add to OpenTabs" quietly dying at the next version bump.
   void session.ensureRelays();
+  void repairTodoDueDates();
   void clearStoredErrors().then(() => refreshAll(true));
 });
 
@@ -452,7 +476,7 @@ ext.runtime.onStartup.addListener(() => {
   // difference between sync that works and sync that people stop trusting.
   void sync.run();
   void session.ensureRelays();
-  void sweepOverdue();
+  void repairTodoDueDates().then(() => sweepOverdue());
   void clearStoredErrors().then(() => refreshAll());
 });
 
@@ -1124,8 +1148,18 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (type === "parseDue") {
     const text = String((msg as { text?: string }).text ?? "");
     void wasm()
-      .then((core) => sendResponse(core.parseDueDate(text, Math.floor(Date.now() / 1000))))
+      .then((core) => {
+        // The parser reads and writes civil time. Give it the reader's clock
+        // and turn its answer back into an instant (APP-181, src/lib/walltime.ts).
+        const parsed = core.parseDueDate(text, wallNow()) as { at: number } | null;
+        sendResponse(parsed ? { ...parsed, at: wallToEpoch(parsed.at) } : null);
+      })
       .catch(() => sendResponse(null));
+    return true;
+  }
+  if (type === "repairTodoDues") {
+    // Exposed for the end-to-end test, which cannot restart a browser.
+    void repairTodoDueDates().then(() => sendResponse({ ok: true }));
     return true;
   }
   if (type === "rescheduleReminder") {

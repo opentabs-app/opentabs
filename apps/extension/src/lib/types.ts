@@ -194,6 +194,8 @@ export interface LocalState {
   focusItems?: FocusItem[];
   scratch?: string;
   todos?: Todo[];
+  /** Set once the pre-1.0.3 UTC due dates have been converted (APP-181). */
+  todoDuesLocalised?: boolean;
   /**
    * Subscribed calendars. `storage.local` ONLY — the URLs are bearer secrets.
    *
