@@ -10,7 +10,7 @@
  * ask, only check.
  */
 import { ext, isFirefox, KEY, getLocal, getSync, setLocal, setSync } from "../lib/ext";
-import { SITE_MATCH } from "../lib/openapps";
+import { SITE_MATCH } from "../lib/account";
 import { appKey, BUNDLED_APPS, normaliseUrl, type WebApp } from "../lib/apps";
 import { initMarketPane, openShareDialog, showMarketPane } from "./marketpane";
 import { initSyncPane, showSyncPane } from "./syncpane";

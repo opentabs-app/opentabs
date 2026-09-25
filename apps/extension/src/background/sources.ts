@@ -18,7 +18,7 @@ import {
 } from "../lib/backoff";
 import { sameLink } from "../lib/link";
 import { has, originOf, originsOf } from "./permissions";
-import { FEEDS_BASE, SITE_MATCH } from "../lib/openapps";
+import { FEEDS_BASE, SITE_MATCH } from "../lib/account";
 import { wasm } from "./wasm-loader";
 import { mayRun, scrapeSearch } from "./xscrape";
 

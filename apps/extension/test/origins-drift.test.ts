@@ -16,10 +16,10 @@ import { describe, expect, it } from "vitest";
 const root = resolve(__dirname, "..", "..", "..");
 const rustSrc = readFileSync(resolve(root, "crates/tabs-core/src/config/mod.rs"), "utf8");
 const tsSrc = readFileSync(resolve(__dirname, "..", "src/settings/settings.ts"), "utf8");
-const constSrc = readFileSync(resolve(__dirname, "..", "src/lib/openapps.ts"), "utf8");
+const constSrc = readFileSync(resolve(__dirname, "..", "src/lib/account.ts"), "utf8");
 
 /**
- * The named match patterns from `lib/openapps.ts`.
+ * The named match patterns from `lib/account.ts`.
  *
  * The TypeScript table refers to our own hostnames by name rather than by
  * literal, because they are defined once and a second copy is exactly the

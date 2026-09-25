@@ -1,4 +1,4 @@
-/* Base layer: resets + the handful of element defaults every OpenApps surface assumes. */
+/* Base layer: resets + the handful of element defaults every surface here assumes. */
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg-page);color:var(--text-body);font:var(--type-body);letter-spacing:var(--tracking-body);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}

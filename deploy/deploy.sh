@@ -5,7 +5,7 @@
 # nginx configs, verify.sh and the full runbook — live in the private site
 # repository, checked out beside this one:
 #
-#     openapps/opentabs-website/        github.com/opentabs-app/opentabs-website
+#     opentabs-website/                 github.com/opentabs-app/opentabs-website
 #
 # Deploy from there:
 #

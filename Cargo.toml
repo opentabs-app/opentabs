@@ -1,4 +1,4 @@
-# OpenTabs. Its own workspace, deliberately excluded from the openapps root
+# OpenTabs. Its own workspace, deliberately excluded from the parent root
 # (see that Cargo.toml's `exclude`) so a path dependency never drags this
 # tree into the platform workspace.
 [workspace]

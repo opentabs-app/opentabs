@@ -1,5 +1,5 @@
 /**
- * Signing in to OpenApps, from an extension.
+ * Signing in, from an extension.
  *
  * The worker owns the session, for the same reason it owns the config: a
  * settings page that held its own token would lose it on every navigation,
@@ -30,10 +30,10 @@ import { ext } from "../lib/ext";
 import {
   MARKET_MATCH,
   MARKET_ORIGIN,
-  OPENAPPS_BASE_URL,
-  OPENAPPS_MATCH,
+  PLATFORM_BASE_URL,
+  PLATFORM_MATCH,
   SIGNIN_URL,
-} from "../lib/openapps";
+} from "../lib/account";
 
 /** The stored session. `refresh` may be absent — some flows return only one. */
 export interface Session {
@@ -43,7 +43,16 @@ export interface Session {
   expires: number;
 }
 
-const STORE_KEY = "opentabs:openapps:session";
+/**
+ * The session's key in `storage.session`.
+ *
+ * Renamed in 1.0.2. Nothing migrates the old one: that storage is
+ * memory-backed and does not survive an extension update anyway, so the only
+ * reader affected is one signed in at that moment, who signs in again. A
+ * migration would have meant shipping the old name as a string in the
+ * bundle, which is the thing this rename is for.
+ */
+const STORE_KEY = "opentabs:account:session";
 
 /**
  * Renew this far before expiry.
@@ -93,7 +102,7 @@ async function write(s: Session | null): Promise<void> {
 
 /** Whether the reader has allowed OpenTabs to reach the sign-in origin. */
 export function hasAuthAccess(): Promise<boolean> {
-  return ext.permissions.contains({ origins: [OPENAPPS_MATCH] }).catch(() => false);
+  return ext.permissions.contains({ origins: [PLATFORM_MATCH] }).catch(() => false);
 }
 
 /**
@@ -119,7 +128,7 @@ export async function accept(accessToken: string, refreshToken: string | null): 
 export function fromSignInPage(senderUrl: string | undefined): boolean {
   if (!senderUrl) return false;
   try {
-    return new URL(senderUrl).origin === new URL(OPENAPPS_BASE_URL).origin;
+    return new URL(senderUrl).origin === new URL(PLATFORM_BASE_URL).origin;
   } catch {
     return false;
   }
@@ -154,7 +163,7 @@ export async function token(): Promise<string | null> {
 async function renew(refresh: string): Promise<string | null> {
   let body: { access_token?: string; refresh_token?: string } | null = null;
   try {
-    const res = await fetch(`${OPENAPPS_BASE_URL}/v1/auth/refresh`, {
+    const res = await fetch(`${PLATFORM_BASE_URL}/v1/auth/refresh`, {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },
       credentials: "omit",
@@ -184,7 +193,7 @@ export async function signOut(): Promise<void> {
   await write(null);
   if (!s?.refresh) return;
   try {
-    await fetch(`${OPENAPPS_BASE_URL}/v1/auth/logout`, {
+    await fetch(`${PLATFORM_BASE_URL}/v1/auth/logout`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       credentials: "omit",
@@ -211,9 +220,9 @@ const RELAYS: {
   runAt: chrome.scripting.RegisteredContentScript["runAt"];
 }[] = [
   {
-    id: "openapps-signin-relay",
-    match: OPENAPPS_MATCH,
-    matches: [`${OPENAPPS_BASE_URL}/signin*`],
+    id: "signin-relay",
+    match: PLATFORM_MATCH,
+    matches: [`${PLATFORM_BASE_URL}/signin*`],
     js: "signin-relay.js",
     // The page can post the session as soon as it loads, on the leg back
     // from Google. A listener registered at document_idle would miss it.
@@ -274,7 +283,7 @@ export async function ensureRelays(): Promise<void> {
 }
 
 /** The origins the relays are registered against, for the check above. */
-const RELAY_MATCHES = new Set([OPENAPPS_MATCH, MARKET_MATCH]);
+const RELAY_MATCHES = new Set([PLATFORM_MATCH, MARKET_MATCH]);
 
 /**
  * Whether a URL is one we are willing to fetch a pack from.

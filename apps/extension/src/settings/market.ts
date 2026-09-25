@@ -18,8 +18,8 @@
 import { ext } from "../lib/ext";
 import type { Config, Instance, Theme } from "../lib/types";
 
-export { MARKET_ORIGIN } from "../lib/openapps";
-import { MARKET_MATCH, MARKET_ORIGIN } from "../lib/openapps";
+export { MARKET_ORIGIN } from "../lib/account";
+import { MARKET_MATCH, MARKET_ORIGIN } from "../lib/account";
 
 /** The match pattern, for `permissions.request`. */
 export const MARKET_API = MARKET_MATCH;
