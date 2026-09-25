@@ -22,6 +22,50 @@ async function sgContext() {
   });
 }
 
+/**
+ * Enable the calendar group and give it events, the way the worker would.
+ *
+ * Writing a payload straight into storage races the worker: it refreshes the
+ * group, finds no calendar URLs, and writes an empty result. An empty result
+ * normally leaves stored data alone — but only when the two agree on the
+ * fingerprint of the options that produced them, and a payload injected by
+ * hand carries none. So whichever landed last won, which is why these tests
+ * failed perhaps one run in five, here and in CI.
+ *
+ * Waiting for the worker's own payload and reusing its `config_hash` puts the
+ * injected events under the same protection as fetched ones.
+ */
+async function seedCalendar(page: import("@playwright/test").Page, events: unknown[]) {
+  await page.evaluate(async () => {
+    const got = await chrome.storage.sync.get("opentabs:config");
+    const cfg = got["opentabs:config"];
+    cfg.instances.find((i: { def: string }) => i.def === "calendar").enabled = true;
+    await chrome.storage.sync.set({ "opentabs:config": cfg });
+    await chrome.runtime.sendMessage({ type: "refresh" }).catch(() => {});
+  });
+
+  const hash = await page.evaluate(async () => {
+    for (let i = 0; i < 100; i++) {
+      const all = (await chrome.storage.local.get("opentabs:payloads"))["opentabs:payloads"] ?? {};
+      const h = all.calendar?.config_hash;
+      if (h) return h as string;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return null;
+  });
+  expect(hash, "the worker never wrote a calendar payload to borrow a fingerprint from").toBeTruthy();
+
+  await page.evaluate(
+    async ([data, config_hash]) => {
+      const now = Math.floor(Date.now() / 1000);
+      const all = (await chrome.storage.local.get("opentabs:payloads"))["opentabs:payloads"] ?? {};
+      all.calendar = { instanceId: "calendar", generated_at: now, stale_after: now + 3600, data, config_hash };
+      await chrome.storage.local.set({ "opentabs:payloads": all });
+    },
+    [events, hash] as [unknown[], string],
+  );
+}
+
 test("a 9am local event shows as 09:00, not shifted by the reader's offset", async () => {
   const ctx = await sgContext();
   try {
@@ -34,7 +78,7 @@ test("a 9am local event shows as 09:00, not shifted by the reader's offset", asy
 
     // Two events at the same wall clock, expressed the two ways Google does:
     // a TZID= local time (floating) and the equivalent Z-suffixed instant.
-    const shown = await page.evaluate(async () => {
+    const events = await page.evaluate(() => {
       const d = new Date();
       const y = d.getFullYear();
       const m = d.getMonth();
@@ -45,31 +89,14 @@ test("a 9am local event shows as 09:00, not shifted by the reader's offset", asy
       const nineLocal = Math.floor(new Date(y, m, day, 9, 0, 0).getTime() / 1000);
       // The floating form: the same wall clock stamped as if UTC.
       const nineFloating = Math.floor(Date.UTC(y, m, day, 9, 0, 0) / 1000);
-
-      const got = await chrome.storage.sync.get("opentabs:config");
-      const cfg = got["opentabs:config"];
-      cfg.instances.find((i: { def: string }) => i.def === "calendar").enabled = true;
-      await chrome.storage.sync.set({ "opentabs:config": cfg });
-
-      const now = Math.floor(Date.now() / 1000);
-      await chrome.storage.local.set({
-        "opentabs:payloads": {
-          calendar: {
-            instanceId: "calendar",
-            generated_at: now,
-            stale_after: now + 3600,
-            data: [
-              { uid: "f", summary: "Floating nine", start: nineFloating,
-                end: nineFloating + 3600, all_day: false, floating: true },
-              { uid: "z", summary: "Absolute nine", start: nineLocal,
-                end: nineLocal + 3600, all_day: false, floating: false },
-            ],
-          },
-        },
-      });
-      return true;
+      return [
+        { uid: "f", summary: "Floating nine", start: nineFloating,
+          end: nineFloating + 3600, all_day: false, floating: true },
+        { uid: "z", summary: "Absolute nine", start: nineLocal,
+          end: nineLocal + 3600, all_day: false, floating: false },
+      ];
     });
-    expect(shown).toBe(true);
+    await seedCalendar(page, events);
 
     await page.reload();
     await page.waitForSelector('.card[data-id="calendar"]', { timeout: 15_000 });
@@ -103,31 +130,19 @@ test("a 9am event today is filed under Today, not Yesterday or Tomorrow", async 
     const page = await ctx.newPage();
     await page.goto(`chrome-extension://${id}/newtab.html`);
 
-    await page.evaluate(async () => {
+    const events = await page.evaluate(() => {
       const d = new Date();
       // 23:30 local tonight: past 08:00, so already tomorrow in UTC. Counting
       // UTC days would file this under the wrong heading.
       const lateLocal = Math.floor(
         new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 30, 0).getTime() / 1000,
       );
-      const got = await chrome.storage.sync.get("opentabs:config");
-      const cfg = got["opentabs:config"];
-      cfg.instances.find((i: { def: string }) => i.def === "calendar").enabled = true;
-      await chrome.storage.sync.set({ "opentabs:config": cfg });
-
-      const now = Math.floor(Date.now() / 1000);
-      await chrome.storage.local.set({
-        "opentabs:payloads": {
-          calendar: {
-            instanceId: "calendar", generated_at: now, stale_after: now + 3600,
-            data: [
-              { uid: "l", summary: "Late tonight", start: lateLocal,
-                end: lateLocal + 1800, all_day: false, floating: false },
-            ],
-          },
-        },
-      });
+      return [
+        { uid: "l", summary: "Late tonight", start: lateLocal,
+          end: lateLocal + 1800, all_day: false, floating: false },
+      ];
     });
+    await seedCalendar(page, events);
 
     await page.reload();
     await page.waitForSelector('.card[data-id="calendar"] .daysep', { timeout: 15_000 });
@@ -147,29 +162,17 @@ test("an all-day event does not collide with its title", async () => {
     const page = await ctx.newPage();
     await page.goto(`chrome-extension://${id}/newtab.html`);
 
-    await page.evaluate(async () => {
-      const got = await chrome.storage.sync.get("opentabs:config");
-      const cfg = got["opentabs:config"];
-      cfg.instances.find((i: { def: string }) => i.def === "calendar").enabled = true;
-      await chrome.storage.sync.set({ "opentabs:config": cfg });
-
-      const now = Math.floor(Date.now() / 1000);
+    const events = await page.evaluate(() => {
       const d = new Date();
       const midnight = Math.floor(
         new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() / 1000,
       );
-      await chrome.storage.local.set({
-        "opentabs:payloads": {
-          calendar: {
-            instanceId: "calendar", generated_at: now, stale_after: now + 3600,
-            data: [
-              { uid: "a", summary: "Labor Day", start: midnight, end: midnight + 86400,
-                all_day: true, floating: false },
-            ],
-          },
-        },
-      });
+      return [
+        { uid: "a", summary: "Labor Day", start: midnight, end: midnight + 86400,
+          all_day: true, floating: false },
+      ];
     });
+    await seedCalendar(page, events);
     await page.reload();
     await page.waitForSelector('.card[data-id="calendar"] .ev');
 
@@ -199,31 +202,19 @@ test("an event written in another timezone shows at the reader's hour", async ()
     const page = await ctx.newPage();
     await page.goto(`chrome-extension://${id}/newtab.html`);
 
-    await page.evaluate(async () => {
-      const got = await chrome.storage.sync.get("opentabs:config");
-      const cfg = got["opentabs:config"];
-      cfg.instances.find((i: { def: string }) => i.def === "calendar").enabled = true;
-      await chrome.storage.sync.set({ "opentabs:config": cfg });
-
-      const now = Math.floor(Date.now() / 1000);
+    const events = await page.evaluate(() => {
       const d = new Date();
       // 09:00 tomorrow in New York, stamped as wall clock the way the parser
       // does. In Singapore (UTC+8, NY at UTC-4) that is 21:00 the same day.
       const wall = Math.floor(
         Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 9, 0, 0) / 1000,
       );
-      await chrome.storage.local.set({
-        "opentabs:payloads": {
-          calendar: {
-            instanceId: "calendar", generated_at: now, stale_after: now + 3600,
-            data: [
-              { uid: "ny", summary: "New York call", start: wall, end: wall + 3600,
-                all_day: false, floating: true, tzid: "America/New_York" },
-            ],
-          },
-        },
-      });
+      return [
+        { uid: "ny", summary: "New York call", start: wall, end: wall + 3600,
+          all_day: false, floating: true, tzid: "America/New_York" },
+      ];
     });
+    await seedCalendar(page, events);
 
     await page.reload();
     await page.waitForSelector('.card[data-id="calendar"] .ev', { timeout: 15_000 });
