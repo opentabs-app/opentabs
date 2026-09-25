@@ -1,47 +1,56 @@
 /**
- * The Web Apps group: the suite, plus whatever the reader made of it.
+ * The Web Apps group: empty on arrival, and whatever the reader makes of it.
  *
  * Driven through the settings pane and read back off the new tab page, so
  * what is asserted is the card someone actually sees — the merge rule itself
- * is unit-tested next to the code in src/background/apps.test.ts.
+ * is unit-tested next to the code in src/lib/apps.test.ts.
+ *
+ * Every test answers the served catalogue itself rather than letting the
+ * worker fetch the live `apps.json`. The catalogue is a file on a server, and
+ * a test that reads it is asserting on the server: these ran green locally
+ * while the deployed file still listed ten products, and went red in CI an
+ * hour later when it was emptied. What the extension does with a catalogue is
+ * the thing under test, so the catalogue is supplied here.
  */
 import { test, expect } from "./fixtures";
 
-test("the card lists the suite, and the pane can take one off it", async ({ context, extensionId }) => {
-  const settings = await context.newPage();
-  await settings.goto(`chrome-extension://${extensionId}/settings.html#pane=groups`);
-  await settings.waitForSelector(".gitem");
+const APPS_JSON = "https://opentabs.app/tabs/v1/apps.json";
 
-  const group = settings.locator('.gitem[data-instance="apps"]');
-  await expect(group).toHaveCount(1);
-  // The options are in the DOM from the start but collapsed; "edit" is what
-  // opens them. Clicking the row itself hits the group's enable checkbox.
-  await group.locator('.gitem-head button:text-is("edit")').click();
+/** The card, as a reader sees it, after a fresh load of the new tab page. */
+async function cardNames(context: import("@playwright/test").BrowserContext, extensionId: string) {
+  const tab = await context.newPage();
+  await tab.goto(`chrome-extension://${extensionId}/newtab.html`);
+  await tab.waitForTimeout(700);
+  const got = await tab.locator(".apps .app .n").allInnerTexts();
+  await tab.close();
+  return got;
+}
 
-  const rows = group.locator(".approw input[type=checkbox]");
-  await expect.poll(async () => rows.count(), { timeout: 10_000 }).toBeGreaterThanOrEqual(8);
-
-  const names = await group.locator(".approw label, .approw").allInnerTexts();
-  expect(names.join(" ")).toContain("OpenSubs");
-  expect(names.join(" ")).toContain("OpenPhotoId");
-
-  // Untick the first, and it leaves the card.
-  const firstLabel = ((await group.locator(".approw").first().innerText()).split("\n")[0] ?? "").trim();
-  await rows.first().uncheck();
+test("the card starts empty, and its empty state opens the pane that fills it", async ({ context, extensionId }) => {
+  await context.route(APPS_JSON, (r) => r.fulfill({ status: 200, body: JSON.stringify({ apps: [] }) }));
 
   const tab = await context.newPage();
-  await expect
-    .poll(
-      async () => {
-        await tab.goto(`chrome-extension://${extensionId}/newtab.html`);
-        return tab.locator(".apps .app .n").allInnerTexts();
-      },
-      { timeout: 15_000 },
-    )
-    .not.toContain(firstLabel);
+  await tab.goto(`chrome-extension://${extensionId}/newtab.html`);
+
+  // The group is still there. Hiding it when empty would hide the only way in.
+  const card = tab.locator(".card", { has: tab.locator("text=Web Apps") }).first();
+  await expect(card).toBeVisible();
+  await expect(card.locator(".app")).toHaveCount(0);
+  await expect(card).toContainText("No web apps yet.");
+
+  const [settings] = await Promise.all([
+    context.waitForEvent("page"),
+    card.locator("button:text-is('Add a web app')").click(),
+  ]);
+  await settings.waitForLoadState();
+  expect(settings.url()).toContain("settings.html#i=apps");
+  // And it lands on the group whose card sent them, with its adder open.
+  await expect(settings.locator('.gitem[data-instance="apps"] .approw-add')).toBeVisible();
 });
 
 test("a web app someone adds shows up on the card", async ({ context, extensionId }) => {
+  await context.route(APPS_JSON, (r) => r.fulfill({ status: 200, body: JSON.stringify({ apps: [] }) }));
+
   const settings = await context.newPage();
   await settings.goto(`chrome-extension://${extensionId}/settings.html#pane=groups`);
   const group = settings.locator('.gitem[data-instance="apps"]');
@@ -71,53 +80,46 @@ test("a web app someone adds shows up on the card", async ({ context, extensionI
 });
 
 /**
- * Every deployed web app, and all three ways to change the card.
+ * The three ways to change the card, against a catalogue that is not empty.
  *
- * The served catalogue is answered as a 404 here. Otherwise the worker would
- * fetch the live `apps.json` — which, at the time this was written, was being
- * regenerated twice a day by a binary built on 6 September and still listed
- * four apps, one of them a dead link — and the test would be asserting on
- * the server rather than on the extension.
+ * Nothing ships in the catalogue any more, but the layering that reads it is
+ * still the code that renders the card, and a served entry is still something
+ * a reader must be able to take off. So one is supplied here — which is also
+ * how this test stops depending on what any server happens to be saying.
  */
-test("lists every deployed web app, and each can be unticked, added or removed", async ({ context, extensionId }) => {
-  await context.route("https://opentabs.app/tabs/v1/apps.json", (r) => r.fulfill({ status: 404, body: "" }));
+test("a served app can be unticked, and one of your own added and removed", async ({ context, extensionId }) => {
+  await context.route(APPS_JSON, (r) =>
+    r.fulfill({
+      status: 200,
+      body: JSON.stringify({ apps: [{ id: "demo", name: "Demo Docs", url: "https://demo.test/", tagline: "A served entry" }] }),
+    }),
+  );
 
   const settings = await context.newPage();
   await settings.goto(`chrome-extension://${extensionId}/settings.html#pane=groups`);
   const group = settings.locator('.gitem[data-instance="apps"]');
   await group.locator('.gitem-head button:text-is("edit")').click();
 
-  // All ten, by name.
-  const names = ["OpenSubs", "OpenPDFEdit", "OpenCapture", "OpenDocScan", "OpenDownloader",
-    "OpenNoteTaker", "OpenPhotoId", "OpenPixels", "OpenClipboard", "OpenPassword"];
-  const listed = (await group.locator("label.approw").allInnerTexts()).join(" ");
-  for (const n of names) expect(listed, `${n} should be in the picker`).toContain(n);
+  await expect.poll(() => cardNames(context, extensionId), { timeout: 15_000 }).toContain("Demo Docs");
+  await expect.poll(async () => (await group.locator("label.approw").allInnerTexts()).join(" "), { timeout: 10_000 })
+    .toContain("Demo Docs");
 
-  const cardNames = async () => {
-    const tab = await context.newPage();
-    await tab.goto(`chrome-extension://${extensionId}/newtab.html`);
-    await tab.waitForTimeout(700);
-    const got = await tab.locator(".apps .app .n").allInnerTexts();
-    await tab.close();
-    return got;
-  };
-
-  // 1. Untick one.
-  await group.locator('label.approw:has-text("OpenPassword") input[type=checkbox]').uncheck();
-  await expect.poll(cardNames, { timeout: 15_000 }).not.toContain("OpenPassword");
+  // 1. Untick the served one.
+  await group.locator('label.approw:has-text("Demo Docs") input[type=checkbox]').uncheck();
+  await expect.poll(() => cardNames(context, extensionId), { timeout: 15_000 }).not.toContain("Demo Docs");
 
   // 2. Add one of your own.
   const add = group.locator(".approw-add");
   await add.locator("input").nth(0).fill("Linear");
   await add.locator("input").nth(1).fill("linear.app");
   await add.locator(".btn").click();
-  await expect.poll(cardNames, { timeout: 15_000 }).toContain("Linear");
+  await expect.poll(() => cardNames(context, extensionId), { timeout: 15_000 }).toContain("Linear");
 
   // 3. Remove it again.
   await group.locator('.approw:has-text("Linear") .btn:text-is("Remove")').click();
-  await expect.poll(cardNames, { timeout: 15_000 }).not.toContain("Linear");
+  await expect.poll(() => cardNames(context, extensionId), { timeout: 15_000 }).not.toContain("Linear");
 
   // And the unticked one comes back when ticked — nothing was destroyed.
-  await group.locator('label.approw:has-text("OpenPassword") input[type=checkbox]').check();
-  await expect.poll(cardNames, { timeout: 15_000 }).toContain("OpenPassword");
+  await group.locator('label.approw:has-text("Demo Docs") input[type=checkbox]').check();
+  await expect.poll(() => cardNames(context, extensionId), { timeout: 15_000 }).toContain("Demo Docs");
 });

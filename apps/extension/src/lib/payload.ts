@@ -21,6 +21,13 @@ export function isEmptyResult(data: unknown): boolean {
  * so staleness keeps counting from when the data was actually fetched, and a
  * source that has quietly died still ages out instead of looking fresh
  * forever.
+ *
+ * `emptyIsAnAnswer` turns that off, for a group where nothing is a real
+ * result rather than a failed fetch. Web Apps is the case: the reader can
+ * untick the last entry, and the served catalogue is empty by design, so
+ * keeping the previous list would mean an app they removed stayed on the card
+ * — and, on an installed copy, that the products the server stopped sending
+ * never left it.
  */
 export function mergePayload(
   id: string,
@@ -30,6 +37,7 @@ export function mergePayload(
   now: number,
   error?: string,
   configHash?: string,
+  emptyIsAnAnswer = false,
 ): Payload {
   const empty = isEmptyResult(data);
   // Data produced under different options is not "what we already have" — it
@@ -40,11 +48,14 @@ export function mergePayload(
   // as same is what kept a removed source's articles on screen indefinitely
   // for anyone upgrading, which is everyone.
   const sameConfig = configHash === undefined || prev?.config_hash === configHash;
-  const keepPrev = empty && sameConfig && !isEmptyResult(prev?.data);
+  const keepPrev = !emptyIsAnAnswer && empty && sameConfig && !isEmptyResult(prev?.data);
 
   const kept = keepPrev ? prev!.data : data;
   const stamped = keepPrev ? (prev!.generated_at ?? 0) : now;
-  const usable = !isEmptyResult(kept);
+  // An empty answer is still an answer: it gets this refresh's timestamp, so
+  // the group renders its empty state instead of being treated as never
+  // fetched and hidden.
+  const usable = emptyIsAnAnswer || !isEmptyResult(kept);
 
   return {
     instanceId: id,
