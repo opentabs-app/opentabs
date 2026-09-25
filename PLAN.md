@@ -36,10 +36,10 @@ the *why* is what a future change needs to argue against.
 | # | Decision | Why |
 |---|---|---|
 | D1 | **Hybrid sourcing, client-direct by default.** The extension fetches its own data. A small static server handles only what the client provably cannot. | MV3 extensions bypass CORS with host permissions, so client-direct is far more viable than on the web. Keeps the product alive if the server dies. |
-| D2 | **The server handles exactly two things:** the OpenApps app catalogue and GitHub trending. | The catalogue is the release valve — a new product appears the day you ship it, not after a store review. Trending is a 682 KB page republished as 8 KB, which is politer to GitHub and lets a markup change be a server-side fix. Nothing else needs a server. |
+| D2 | **The server handles exactly two things:** the app catalogue and GitHub trending. | The catalogue shipped this product's siblings until 2026-09-25, when it was emptied: a tab manager that arrives advertising one vendor's other products is not one a reader chose. The group stays and its contents are theirs. Trending is a 682 KB page republished as 8 KB, which is politer to GitHub and lets a markup change be a server-side fix. Nothing else needs a server. |
 | D3 | **Rust core (`tabs-core`) compiled to wasm — in the service worker only, never the new tab page.** | D1 moved feed parsing, dedupe, ranking, ICS recurrence and PSL grouping into the client. That is a large body of pure logic. Putting it in a background alarm keeps it off the paint path entirely; the new tab page becomes a dumb renderer and is *faster* than an inline-fetch design. |
 | D4 | **Local-first. Zero OpenTabs user data on the backend.** Preferences in `chrome.storage.sync`; secrets in `storage.local`; cross-browser sync via a config string, not an account. | User constraint. Also means the server's two files are unauthenticated static files with no identity in the request path and nothing to log. |
-| D5 | **Login is optional and additive**, for the Web Apps launcher (signed-in state, balance, SSO) and, if ever wanted, the Supporter entitlement — which reuses the existing row in `openapps-server` and adds no new user data. | OpenTabs must work fully signed-out. This audience is hostile to account walls. |
+| D5 | **Login is optional and additive**, for the Web Apps launcher (signed-in state, balance, SSO) and, if ever wanted, the Supporter entitlement — which reuses the existing row on the accounts server and adds no new user data. | OpenTabs must work fully signed-out. This audience is hostile to account walls. |
 | D6 | **On-demand host permissions** (`optional_host_permissions` + `chrome.permissions.request()` on the user's click) for user-added feeds. Only default-on groups' origins ship in fixed `host_permissions`. | `<all_urls>` on a new-tab override reads as "read all your data on all websites" and invites a hard store review. Asking per-site at the moment of adding is better UX *and* a better review story. |
 | D7 | **Calendars via ICS subscription, not OAuth.** | One parser covers Google, Outlook, iCloud, Fastmail, Proton, Notion, Linear, Cal.com. No OAuth, no Google verification, no backend. `calendar.readonly` is a *sensitive* scope — verification with justification and demo video, though not the CASA audit that restricted scopes trigger — which is a v2 cost, not a v1 one. |
 | D8 | **Default to calm.** A small default-on group set; density is opt-in. | 90% of new-tab opens are "I want to go somewhere", not "let me read". Also the cheapest way to keep the install-time permission list short (D6). |
@@ -267,7 +267,7 @@ local to-do list without three bespoke code paths.
   apply. Power users edit text; everyone else uses the forms. Both write the same doc.
 - **OPML in and out** for feeds — migration from Feedly/Inoreader/NetNewsWire, and the
   ability to leave.
-- **Themes** from `@openapps/tokens` semantic aliases only. `oa-auto` on `<html>`;
+- **Themes** from the shared design tokens, semantic aliases only. `oa-auto` on `<html>`;
   never a `prefers-color-scheme` query of our own.
 
 ---
@@ -358,7 +358,7 @@ one toggle away in settings.
 ## Milestones
 
 **M0 — Skeleton.** Cargo workspace, `tabs-core` building for native + wasm32, Vite
-multi-entry extension, `@openapps/tokens` wired, CI (fmt, clippy -D warnings, cargo
+multi-entry extension, design tokens wired, CI (fmt, clippy -D warnings, cargo
 test, wasm build, typecheck, vitest, Playwright). Deliverable: a styled empty shell
 that loads as an unpacked extension.
 
@@ -444,7 +444,7 @@ merged **Today** timeline of events and deadlines together.
 producing two unauthenticated static files: the hand-maintained app catalogue, and
 `github-trending.json` — one fetch of the 682 KB trending page, parsed to ~8 KB. **No
 database, no API key, no model, no auth.** It writes into a directory the existing site
-deploy already serves, so `openapps.network/tabs/v1/*.json` needs no new DNS, certificate
+deploy already serves, so `opentabs.app/tabs/v1/*.json` needs no new DNS, certificate
 or vhost. The HTML parser ships with a checked-in fixture so a GitHub markup change fails
 a test rather than a user's new tab.
 
@@ -563,4 +563,4 @@ Honest gaps, so nobody rediscovers them as surprises:
    source, per A5 — say so if that reading is wrong.
 3. **Does OpenTabs ever charge?** The Supporter-entitlement pattern fits (D5), but nothing
    here costs enough per user to need it. Recommend shipping entirely free and revisiting.
-4. **Repo split**: stay under `openapps/` like `opencapture`, or its own repository?
+4. **Repo split**: stay in the shared working tree, or its own repository?

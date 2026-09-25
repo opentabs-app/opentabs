@@ -9,34 +9,17 @@ const catalogue = [
   { id: "openpixels", name: "OpenPixels", url: "https://openpixels.app/" },
 ];
 
-describe("the bundled suite", () => {
-  it("lists every deployed web app", () => {
-    expect(BUNDLED_APPS).toHaveLength(10);
+describe("what ships in the Web Apps group", () => {
+  /** The point of the change: no vendor's products, ours included. Whoever
+   *  installs this gets an empty group and fills it themselves. */
+  it("ships no apps at all", () => {
+    expect(BUNDLED_APPS).toEqual([]);
   });
 
-  /** Every `app.` host is a 301 to the apex; pointing at the redirect spends
-   *  a round trip to arrive where the link could have pointed. */
-  it("points at final addresses, not redirects", () => {
-    for (const app of BUNDLED_APPS) {
-      expect(app.url).toMatch(/^https:\/\//);
-      expect(app.url.startsWith("https://app.")).toBe(false);
-    }
-  });
-
-  /** Two rules this list has broken before: a card linking to the page you
-   *  are already on, and naming the platform a reader has never heard of. */
-  it("does not list OpenTabs itself, or the platform", () => {
-    const urls = BUNDLED_APPS.map((a) => a.url).join(" ");
-    expect(urls).not.toContain("opentabs.app");
-    expect(urls).not.toContain("openapps");
-  });
-
-  it("gives every app a name, an id and a tagline", () => {
-    for (const app of BUNDLED_APPS) {
-      expect(app.id).toBeTruthy();
-      expect(app.name).toBeTruthy();
-      expect(app.tagline).toBeTruthy();
-    }
+  it("is still a list the layering can build on", () => {
+    const mine = [{ name: "Excalidraw", url: "https://excalidraw.com/" }];
+    expect(arrangeApps(BUNDLED_APPS, { custom: mine })).toEqual(mine);
+    expect(arrangeApps(BUNDLED_APPS, {})).toEqual([]);
   });
 });
 

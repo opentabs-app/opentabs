@@ -4,8 +4,6 @@ A new tab page that shows your **actual open tabs** — grouped by site and
 closable — above a calm briefing you choose: web apps, markets, weather,
 news topics, repos, calendar, to-dos.
 
-Built on the OpenApps design system.
-
 ```
 crates/tabs-core      pure Rust — parsing, ranking, grouping, dates. native + wasm
 crates/tabs-feedgen   the daily feeds: two static files, no database
@@ -19,7 +17,7 @@ docs/config.schema.json  the published config schema
 The website — opentabs.app, market.opentabs.app, and the deploy scripts and
 nginx configs that serve them — is not here. It is private, at
 `opentabs-app/opentabs-website`, checked out beside this repo as
-`openapps/opentabs-website/`. This repository is the extension and the market
+`opentabs-website/` beside it. This repository is the extension and the market
 API, and nothing a visitor to the site reads.
 
 
@@ -29,7 +27,7 @@ API, and nothing a visitor to the site reads.
 |---|---|
 | `opentabs.app` | the site, and the two daily feed files the extension reads |
 | `market.opentabs.app` | the pack marketplace — site and API on one origin |
-| `auth.opentabs.app` | OpenApps accounts, for the two things that need one |
+| `auth.opentabs.app` | accounts, for the two things that need one |
 
 Signing in is optional and buys exactly two things: publishing a pack, and
 liking one. It is never used to store your configuration, which lives in your
@@ -130,10 +128,10 @@ asset.
 Two static files, written by a cron job:
 
 ```sh
-cargo run -p tabs-feedgen -- --out /var/www/openapps/tabs/v1
+cargo run -p tabs-feedgen -- --out /var/www/opentabs/tabs/v1
 ```
 
-`apps.json` (hand-edited — the release valve for new OpenApps products) and
+`apps.json` (an empty catalogue: the Web Apps group is the reader's own) and
 `github-trending.json` (one fetch of `github.com/trending`, 682 KB in, ~7 KB
 out). No database, no API key, no model, no auth. Sign-in, if ever added,
 needs one line: the extension origin in `allowed_origins`.
