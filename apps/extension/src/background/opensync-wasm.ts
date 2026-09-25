@@ -21,7 +21,8 @@
  * `new URL(…, import.meta.url)` below into the hashed asset it emits, exactly
  * as it does for the extension's own core.
  */
-import { ready } from "../../vendor/opensync-client";
+// The module, not the barrel — see the note in sync.ts.
+import { ready } from "../../vendor/opensync-client/session";
 
 const WASM_URL = new URL(
   "../../vendor/opensync-client/wasm/opensync_wasm_bg.wasm",

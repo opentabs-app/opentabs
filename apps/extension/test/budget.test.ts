@@ -193,11 +193,18 @@ describe.runIf(built)("shipped size", () => {
   it("the whole extension stays small", () => {
     // "Light" is a stated property of this product, so it gets a number.
     //
-    // Raised three times now, deliberately and not quietly. 120 → 140 KB
+    // Raised four times now, deliberately and not quietly. 120 → 140 KB
     // covered the focus checklist, per-host backoff, the bookmarks group and
     // X's filter controls; 140 → 170 KB covered the marketplace — a pane, a
     // publish dialog, a pack validator and a theme engine; 170 → 240 KB
     // covers OpenSync, which is a whole encryption engine's worth of glue.
+    //
+    // 240 → 260 KB on 2026-09-25: the engine's client gained a NIP-46 signer,
+    // which brings `nostr-tools` with it. That is 7 KB in the worker and it
+    // arrived with the vendored copy rather than with anything written here.
+    // The barrel that also re-exports the engine's account module is
+    // deliberately not imported (see src/background/sync.ts), which keeps the
+    // rest of that package out.
     //
     // The engine's own wasm is not in this number and should not be: it is a
     // separate asset the worker loads off disk, it is not parsed unless sync
@@ -211,6 +218,6 @@ describe.runIf(built)("shipped size", () => {
     // hide the number that matters.
     const files = ["newtab.js", "settings.js", "background.js", "assets/main.css"];
     const total = files.reduce((n, f) => n + statSync(resolve(dist, f)).size, 0);
-    expect(total).toBeLessThan(240 * 1024);
+    expect(total).toBeLessThan(260 * 1024);
   });
 });

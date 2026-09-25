@@ -12,7 +12,7 @@
 // The copy is generated, never edited. `--check` runs in `npm test` wherever
 // the engine is present, so a stale copy is caught rather than shipped.
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -21,24 +21,25 @@ const SOURCE = join(EXT, "../../../opensync/packages/client/src");
 const VENDOR = join(EXT, "vendor/opensync-client");
 const STAMP = join(VENDOR, "VENDORED.json");
 
-// Everything `index.ts` re-exports, plus the wasm-bindgen glue and the loose
-// binary. `ui/` is the web apps' shared components and nothing here reaches
-// it. The binary is copied rather than the engine's `wasm/inline.ts`: an
-// extension loads the wasm off its own disk (see src/background/opensync-wasm.ts),
-// so the base64 copy would be a megabyte of duplicate in every bundle.
-const FILES = [
-  "index.ts",
-  "hosted.ts",
-  "relay.ts",
-  "session.ts",
-  "pairing.ts",
-  "qr.ts",
-  "scan.ts",
-  "vault.ts",
-  "wasm/opensync_wasm.js",
-  "wasm/opensync_wasm.d.ts",
-  "wasm/opensync_wasm_bg.wasm",
-];
+// Every module in the client's source root, plus the wasm-bindgen glue and
+// the loose binary — read from the engine rather than listed here. A fixed
+// list was the earlier design and it broke the build on 2026-09-25: the engine
+// gained account.ts, nip44.ts and signer.ts, a re-vendor copied the index that
+// re-exports them but not the files themselves, and rollup stopped at
+// "Could not resolve ./account". Deriving the list cannot go stale that way.
+//
+// `ui/` is the web apps' shared components and nothing here reaches it. The
+// binary is copied rather than the engine's `wasm/inline.ts`: an extension
+// loads the wasm off its own disk (see src/background/opensync-wasm.ts), so
+// the base64 copy would be a megabyte of duplicate in every bundle.
+const WASM_FILES = ["wasm/opensync_wasm.js", "wasm/opensync_wasm.d.ts", "wasm/opensync_wasm_bg.wasm"];
+const sourceModules = () =>
+  existsSync(SOURCE)
+    ? readdirSync(SOURCE)
+        .filter((f) => f.endsWith(".ts") && statSync(join(SOURCE, f)).isFile())
+        .sort()
+    : [];
+const FILES = [...sourceModules(), ...WASM_FILES];
 
 // Stands in for the engine's `wasm/inline.ts`, which `ready()` imports
 // dynamically when it is given no source. It is never read here, because
@@ -90,6 +91,9 @@ if (check) {
     const mine = join(VENDOR, f);
     if (!existsSync(mine)) drifted.push(`${f} — missing from the copy`);
     else if (sha(vendored(join(SOURCE, f))) !== sha(readFileSync(mine))) drifted.push(`${f} — differs from the engine`);
+  }
+  for (const f of readdirSync(VENDOR).filter((f) => f.endsWith(".ts"))) {
+    if (!FILES.includes(f)) drifted.push(`${f} — vendored but the engine no longer has it`);
   }
   const inline = join(VENDOR, "wasm/inline.ts");
   if (!existsSync(inline) || readFileSync(inline, "utf8") !== INLINE_STUB) drifted.push("wasm/inline.ts — not the generated stub");
