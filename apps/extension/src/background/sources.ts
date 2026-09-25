@@ -631,7 +631,12 @@ export async function refreshStatus() {
   return out;
 }
 
-/** Served catalogue when reachable, bundled list otherwise. Never empty. */
+/**
+ * Served catalogue when reachable, bundled list otherwise — and both are
+ * empty until the reader adds something. The fetch stays because the layering
+ * in `arrangeApps` is the same either way, and an empty served file is what
+ * takes the old suite off the cards of people who already have it installed.
+ */
 export async function refreshApps(inst: Instance) {
   let catalogue: WebApp[] = BUNDLED_APPS;
   try {

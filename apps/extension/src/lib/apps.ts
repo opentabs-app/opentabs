@@ -16,34 +16,25 @@ export interface WebApp {
 }
 
 /**
- * Every web app the server actually serves to a person, read off its nginx
- * hosts on 13 September 2026 — not the list of folders with a web app in
- * them, most of which are built and deployed nowhere, and a card linking to
- * one would be a link to nothing. Infrastructure hosts (auth, gateway,
- * market, media, the relay) are not apps, and neither is this product or the
- * platform.
+ * What the Web Apps group starts with: nothing.
  *
- * Apex URLs, not the `app.` hosts. Every one of those is a 301 to exactly
- * this, and a redirect on a link clicked from the new tab page is a round
- * trip spent arriving where the link could have pointed.
+ * It used to ship the sibling products of the suite this was built in, and
+ * the served catalogue was a release valve for adding more. Both are gone.
+ * A tab manager that arrives with ten links to one vendor's other products
+ * is advertising, and it tied a product that stands on its own to a platform
+ * its readers have never heard of.
  *
- * OpenTabs is deliberately absent — a card linking you to the page you are
- * already on — and so is the platform, which `deploy/verify.sh` keeps off
- * every page a reader can see, for the same reason: it is the one name here
- * that nobody has heard of.
+ * So the group is the feature and the contents are the reader's: Settings →
+ * Web Apps takes a name and an address, the card offers the same in its empty
+ * state, and `arrangeApps` still layers `hidden` and `custom` over whatever
+ * the catalogue says — which is now an empty list rather than a suite.
+ *
+ * Kept as a named export, empty, rather than deleted: it is what ships when
+ * the served file is unreachable, `arrangeApps` needs a base to layer on, and
+ * the drift test in test/origins-drift.test.ts still holds it against the
+ * feedgen catalogue so the two cannot disagree again.
  */
-export const BUNDLED_APPS: WebApp[] = [
-  { id: "opensubs", name: "OpenSubs", url: "https://opensubs.app/", tagline: "Subtitles and translation" },
-  { id: "openpdfedit", name: "OpenPDFEdit", url: "https://openpdfedit.com/app/", tagline: "Edit PDFs in the browser" },
-  { id: "opencapture", name: "OpenCapture", url: "https://opencapture.app/", tagline: "Full-page screenshots" },
-  { id: "opendocscan", name: "OpenDocScan", url: "https://opendocscan.com/", tagline: "Scan documents to PDF" },
-  { id: "opendownloader", name: "OpenDownloader", url: "https://opendownloader.app/", tagline: "Save video and audio" },
-  { id: "opennotetaker", name: "OpenNoteTaker", url: "https://opennotetaker.app/", tagline: "Meeting notes, on your machine" },
-  { id: "openphotoid", name: "OpenPhotoId", url: "https://openphotoid.com/", tagline: "Passport and ID photos" },
-  { id: "openpixels", name: "OpenPixels", url: "https://openpixels.app/", tagline: "Upscale and restore photos" },
-  { id: "openclipboard", name: "OpenClipboard", url: "https://clipboard.opensync.network/", tagline: "Clipboard history across devices" },
-  { id: "openpassword", name: "OpenPassword", url: "https://passwords.opensync.network/", tagline: "Passwords and secrets, encrypted" },
-];
+export const BUNDLED_APPS: WebApp[] = [];
 
 /** A stable id for an app the catalogue named, or one someone typed. */
 export function appKey(app: { id?: string; url: string }): string {

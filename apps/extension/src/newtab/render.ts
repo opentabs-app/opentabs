@@ -661,7 +661,21 @@ export function renderApps(inst: Instance, apps: { name: string; url: string; ta
     if (app.tagline) a.append(el("div", "t", app.tagline));
     wrap.append(a);
   }
-  body.append(wrap.children.length ? wrap : el("div", "empty", "No apps listed."));
+  if (wrap.children.length) {
+    body.append(wrap);
+    return root;
+  }
+  // Empty is the shipped state, not a failure: nothing is listed until the
+  // reader adds it. So the empty state is the way in rather than a report —
+  // the same settings pane the card's own menu opens.
+  body.append(el("div", "empty", "No web apps yet."));
+  const add = el("button", "corrob", "Add a web app");
+  add.addEventListener("click", () => {
+    void ext.tabs
+      .create({ url: ext.runtime.getURL(`settings.html#i=${encodeURIComponent(inst.id)}`) })
+      .catch(() => {});
+  });
+  body.append(add);
   return root;
 }
 
