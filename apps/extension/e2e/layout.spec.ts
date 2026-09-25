@@ -326,6 +326,25 @@ test("tickers pack tightly without clipping the price", async ({ context, extens
   await page.waitForSelector(".card");
 
   // Realistic worst case: eight-character pairs and a six-figure price.
+  //
+  // Enable first, wait for the worker to write its own (empty) payload, and
+  // only then inject. Injecting first loses a race the worker cannot help
+  // having: it reads the whole payload map, refreshes, and writes it back, so
+  // rows written in between are dropped. On a CI runner that left this card
+  // with no rows at all. Once the worker has written, the next refresh is its
+  // five-minute alarm away, which is longer than this test.
+  await page.evaluate(async () => {
+    const cfg = (await chrome.storage.sync.get("opentabs:config"))["opentabs:config"];
+    cfg.instances.find((i: { def: string }) => i.def === "crypto").enabled = true;
+    await chrome.storage.sync.set({ "opentabs:config": cfg });
+    await chrome.runtime.sendMessage({ type: "refresh" }).catch(() => {});
+    for (let i = 0; i < 100; i++) {
+      const p = (await chrome.storage.local.get("opentabs:payloads"))["opentabs:payloads"] ?? {};
+      if (p.crypto) break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  });
+
   await page.evaluate(async () => {
     const rows = [
       "BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT",
@@ -336,9 +355,6 @@ test("tickers pack tightly without clipping the price", async ({ context, extens
     const t = Math.floor(Date.now() / 1000);
     p.crypto = { instanceId: "crypto", data: rows, generated_at: t, stale_after: t + 9999 };
     await chrome.storage.local.set({ "opentabs:payloads": p });
-    const cfg = (await chrome.storage.sync.get("opentabs:config"))["opentabs:config"];
-    cfg.instances.find((i: { def: string }) => i.def === "crypto").enabled = true;
-    await chrome.storage.sync.set({ "opentabs:config": cfg });
   });
   await page.reload();
 

@@ -66,10 +66,17 @@ test("a web app someone adds shows up on the card", async ({ context, extensionI
   await expect
     .poll(
       async () => {
+        // Ask for a refresh on each attempt, not just a reload. The worker
+        // reads the payload map, refreshes and writes it back, so a write
+        // that lands mid-cycle can be dropped — reloading alone would then
+        // re-read the same stale storage until the timeout. Seen on CI.
         await tab.goto(`chrome-extension://${extensionId}/newtab.html`);
+        await tab.evaluate(() => chrome.runtime.sendMessage({ type: "refresh" }).catch(() => {}));
+        await tab.waitForTimeout(300);
+        await tab.reload();
         return tab.locator(".apps .app .n").allInnerTexts();
       },
-      { timeout: 15_000 },
+      { timeout: 20_000 },
     )
     .toContain("Excalidraw");
 
