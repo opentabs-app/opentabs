@@ -147,7 +147,12 @@ async function main() {
       // Fetched groups hide themselves when their data is past budget.
       // A topic renders even when stale, because its note explains itself.
       case "topic": node = renderTopic(inst, fresh(p) ? (data ?? []) : [], p?.error); break;
-      case "apps": if (fresh(p)) node = renderApps(inst, data ?? []); break;
+      // Always rendered, unlike the fetched groups above. An empty list is
+      // this group's shipped state, not a failed refresh — the payload layer
+      // treats `[]` as "nothing usable" so that a bad fetch cannot blank a
+      // card, which here would hide the group and with it the only way to add
+      // an app. Links do not go stale either, so staleness has nothing to say.
+      case "apps": node = renderApps(inst, fresh(p) ? (data ?? []) : []); break;
       case "weather": if (fresh(p)) node = renderWeather(inst, data); break;
       case "crypto": if (fresh(p)) node = renderTickers(inst, data ?? []); break;
       case "equities": if (fresh(p)) node = renderTickers(inst, data ?? [], true); break;
