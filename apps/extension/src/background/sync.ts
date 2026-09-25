@@ -22,21 +22,15 @@
  * and the manifest already requires 121), and pairing is nothing but websocket
  * traffic, so the worker stays up for exactly as long as the conversation.
  */
-import {
-  Payload,
-  PairingCode,
-  Invitation,
-  Namespace,
-  generateAccountKey,
-  grantAccount,
-  joinAccount,
-  endpointsFor,
-  parseAccountKey,
-  assumeTls,
-  HOSTED_RELAY_WS,
-  HOSTED_RELAY_HTTP,
-  NotAdmittedError,
-} from "../../vendor/opensync-client";
+// Imported per module rather than through the client's `index.ts`. That
+// barrel also re-exports `account.ts`, which needs `nostr-tools` for a
+// feature nothing here calls — and a bundler following the barrel pulls the
+// package in, which is a dependency and 7 KB of shipped JavaScript bought for
+// nothing. The modules themselves are the same vendored copy either way.
+import { Payload, Namespace, generateAccountKey, parseAccountKey } from "../../vendor/opensync-client/session";
+import { PairingCode, Invitation, grantAccount, joinAccount, endpointsFor } from "../../vendor/opensync-client/pairing";
+import { assumeTls, HOSTED_RELAY_WS, HOSTED_RELAY_HTTP } from "../../vendor/opensync-client/hosted";
+import { NotAdmittedError } from "../../vendor/opensync-client/relay";
 import { boot } from "./opensync-wasm";
 import { ext, KEY, getLocal, getSync, setLocal, setSync } from "../lib/ext";
 import { decide, decode, encode, fingerprint, type SyncBody, type SyncDoc } from "../lib/sync-doc";
