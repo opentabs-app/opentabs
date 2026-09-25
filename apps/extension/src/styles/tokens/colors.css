@@ -1,4 +1,4 @@
-/* OpenApps color system.
+/* Colour system.
    Layer 1 — the brand palette, verbatim from the supplied brand CSS (hex values unchanged).
    Layer 2 — ramps derived from those hues with color-mix (no new hues invented).
    Layer 3 — semantic aliases. Product code should only ever use layer 3. */
@@ -199,7 +199,7 @@
   --accent-22:var(--slate);
 
   /* ---- App accents ----
-     The OpenApps suite's own assignment. These are aliases: consuming products should
+     The default assignment. These are aliases: a consuming surface should
      either re-point them or use the --accent-N slots directly. */
   --app-notes:var(--accent-6);
   --app-tasks:var(--accent-1);

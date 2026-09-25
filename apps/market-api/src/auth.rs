@@ -1,4 +1,4 @@
-//! Turning an OpenApps access token into an account id.
+//! Turning an access token into an account id.
 //!
 //! This service mints nothing and stores no credential. It receives a token
 //! the platform issued and needs one fact from it: a stable identifier for
@@ -6,7 +6,7 @@
 //!
 //! # The shape of the token
 //!
-//! OpenApps issues short-lived **EdDSA (Ed25519) JWTs** and publishes the
+//! The accounts service issues short-lived **EdDSA (Ed25519) JWTs** and publishes the
 //! public half of the signing key at `/.well-known/jwks.json`. A compact JWS
 //! — `header.payload.signature`, base64url — whose header names the `kid`
 //! that signed it.

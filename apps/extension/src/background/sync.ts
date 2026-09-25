@@ -4,7 +4,7 @@
  * `chrome.storage.sync` already carries the config — within one signed-in
  * profile of one browser. This carries it across the boundary that cannot:
  * Chrome to Firefox, work profile to personal, a machine signed into nothing.
- * The engine is `openapps/opensync`, reached by relative path because there is
+ * The engine is the OpenSync client, vendored into this repository because there is
  * deliberately only ever one copy of it — two copies of a wire format do not
  * disagree at compile time, they disagree by losing data.
  *

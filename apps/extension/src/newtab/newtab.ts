@@ -11,7 +11,7 @@
  */
 import { ext, isFirefox, KEY, getLocal, getSync, setLocal } from "../lib/ext";
 import { profilePickerUrl } from "../lib/profiles";
-import { OPENAPPS_MATCH } from "../lib/openapps";
+import { PLATFORM_MATCH } from "../lib/account";
 import { applyTheme } from "../lib/theme";
 import type { Config, LocalState, Payloads } from "../lib/types";
 import { makeArrangeable, packGrid, watchGrid, type Span } from "./layout";
@@ -317,7 +317,7 @@ function setupAccount() {
     // Without it the worker registers no relay on the sign-in origin, the
     // session is never handed back, and the tab sits there looking finished.
     void ext.permissions
-      .request({ origins: [OPENAPPS_MATCH] })
+      .request({ origins: [PLATFORM_MATCH] })
       .then((ok) => {
         if (!ok) return false;
         // The worker opens the tab and resolves when the session arrives, so

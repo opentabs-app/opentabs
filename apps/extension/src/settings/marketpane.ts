@@ -12,7 +12,7 @@
  * it could possibly land.
  */
 import { ext } from "../lib/ext";
-import { OPENAPPS_MATCH } from "../lib/openapps";
+import { PLATFORM_MATCH } from "../lib/account";
 import type { Config } from "../lib/types";
 import * as market from "./market";
 
@@ -307,7 +307,7 @@ export function openShareDialog(d: Deps, instanceId: string) {
     // Already granted resolves immediately with no prompt, so this is safe
     // to call every time — and calling it every time is what keeps it first.
     void ext.permissions
-      .request({ origins: [OPENAPPS_MATCH, market.MARKET_API] })
+      .request({ origins: [PLATFORM_MATCH, market.MARKET_API] })
       .then((ok) => (ok ? doPublish() : Promise.reject(new Error("declined"))))
       .catch((e: Error) => {
         status.textContent =

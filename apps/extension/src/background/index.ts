@@ -559,7 +559,7 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
    * `https://auth.opentabs.app.evil.test`, which is a site anyone can
    * register.
    */
-  if (type === "openapps:session") {
+  if (type === "account:session") {
     if (!session.fromSignInPage(sender?.url)) {
       sendResponse({ ok: false });
       return false;

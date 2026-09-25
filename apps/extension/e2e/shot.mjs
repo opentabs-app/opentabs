@@ -39,10 +39,11 @@ await sw.evaluate(async (now) => {
         { symbol: "SOL", price: 214.9, changePct: 3.11 },
       ], 300),
       P("apps", [
-        { name: "OpenSubs", url: "#", tagline: "Subtitles and translation" },
-        { name: "OpenPDFEdit", url: "#", tagline: "Edit PDFs in the browser" },
-        { name: "OpenCapture", url: "#", tagline: "Full-page screenshots" },
-        { name: "OpenApps ID", url: "#", tagline: "Account and credits" },
+        // Entries a reader added, which is the only way this card fills now.
+        { name: "Team wiki", url: "#", tagline: "Notes and specs" },
+        { name: "Design board", url: "#", tagline: "Whiteboard and mockups" },
+        { name: "Ticket queue", url: "#", tagline: "What is open this week" },
+        { name: "Status page", url: "#", tagline: "Is anything on fire" },
       ], 86400),
       P("calendar", [
         { uid: "1", summary: "Standup", start: now + 3600, end: now + 5400,

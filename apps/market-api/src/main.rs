@@ -1,6 +1,6 @@
 //! The marketplace API.
 //!
-//! Reading is open to everyone; writing needs an OpenApps account. The
+//! Reading is open to everyone; writing needs an account. The
 //! account is used to answer exactly two questions — *may this person publish
 //! right now* and *have they already liked this* — and is turned into an
 //! opaque token before either is stored. See `store.rs` for what the schema
@@ -8,7 +8,8 @@
 //!
 //! # Auth
 //!
-//! The client sends `Authorization: Bearer <token>` issued by OpenApps. This
+//! The client sends `Authorization: Bearer <token>` issued by the accounts
+//! service. This
 //! service does not mint tokens and does not hold passwords; it verifies the
 //! platform's Ed25519 signature against the key set the platform publishes,
 //! and extracts a stable account id. [`auth::verify`] is where that happens,
