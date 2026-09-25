@@ -473,7 +473,7 @@ function appsEditor(inst: Instance): HTMLElement {
 
   const list = el("div", "applist");
   box.append(
-    el("div", "hint", "Untick to take one off the card. Anything new in the suite appears here on its own."),
+    el("div", "hint", "Add the web apps you use. Name it, give it an address, and it appears on the card."),
     list,
   );
 
