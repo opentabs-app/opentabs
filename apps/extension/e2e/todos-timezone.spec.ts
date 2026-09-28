@@ -32,6 +32,29 @@ async function zoneContext(timezoneId: string) {
   });
 }
 
+/**
+ * Turn a group on, once the worker has written a config to turn it on in.
+ *
+ * A fresh profile has no config until the worker's install handler writes
+ * one, and reading it a moment too early gives `undefined` — which failed
+ * here as "Cannot read properties of undefined (reading 'instances')" on a
+ * loaded machine, and passed everywhere else.
+ */
+async function enableGroup(page: import("@playwright/test").Page, def: string) {
+  await page.evaluate(async (def) => {
+    for (let i = 0; i < 100; i++) {
+      const cfg = (await chrome.storage.sync.get("opentabs:config"))["opentabs:config"];
+      if (cfg?.instances) {
+        cfg.instances.find((x: { def: string }) => x.def === def).enabled = true;
+        await chrome.storage.sync.set({ "opentabs:config": cfg });
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    throw new Error("the worker never wrote a config to enable " + def + " in");
+  }, def);
+}
+
 for (const zone of ZONES) {
   test(`a to-do typed in ${zone.id} (${zone.label}) is due at the hour that was typed`, async () => {
     const ctx = await zoneContext(zone.id);
@@ -42,12 +65,7 @@ for (const zone of ZONES) {
 
       const page = await ctx.newPage();
       await page.goto(`chrome-extension://${id}/newtab.html`);
-      await page.evaluate(async () => {
-        const got = await chrome.storage.sync.get("opentabs:config");
-        const cfg = got["opentabs:config"];
-        cfg.instances.find((i: { def: string }) => i.def === "todos").enabled = true;
-        await chrome.storage.sync.set({ "opentabs:config": cfg });
-      });
+      await enableGroup(page, "todos");
       await page.reload();
 
       const input = page.locator('.card[data-id="todos"] input.newtodo').first();
@@ -106,12 +124,7 @@ test("every phrasing from the report reads back at the typed hour in Shanghai", 
     const id = new URL(sw.url()).host;
     const page = await ctx.newPage();
     await page.goto(`chrome-extension://${id}/newtab.html`);
-    await page.evaluate(async () => {
-      const got = await chrome.storage.sync.get("opentabs:config");
-      const cfg = got["opentabs:config"];
-      cfg.instances.find((i: { def: string }) => i.def === "todos").enabled = true;
-      await chrome.storage.sync.set({ "opentabs:config": cfg });
-    });
+    await enableGroup(page, "todos");
     await page.reload();
 
     const cases = [
@@ -158,28 +171,36 @@ test("every phrasing from the report reads back at the typed hour in Shanghai", 
 });
 
 /**
- * The case the report predicted but could not test: 07:00 in Shanghai.
+ * The case the report predicted but could not test: early morning, east of UTC.
  *
- * Before 08:00 local, UTC is still on yesterday's date, so "today" and
- * "tomorrow" resolved against the UTC day landed a day early for anyone far
- * enough east. The clock is faked rather than waited for.
+ * Before 08:00 local in a UTC+8 zone, UTC is still on yesterday's date, so
+ * "today" and "tomorrow" resolved against the UTC day landed a day early.
+ *
+ * The parse runs in the worker, whose clock a page-level fake clock cannot
+ * move — an earlier version of this test pinned the page's clock and asserted
+ * fixed dates, which passed on the day it was written and rotted three days
+ * later. So instead of moving the clock, it picks the zone where the real
+ * clock already reads about 07:00, whatever time this suite runs.
  */
-test("at 07:00 in Shanghai, today and tomorrow are still the reader's days", async () => {
-  const ctx = await zoneContext("Asia/Shanghai");
+function earlyMorningZone(now = new Date()): string {
+  const wanted = 7;
+  const shift = (wanted - now.getUTCHours() + 24) % 24;
+  // Etc/GMT-8 is UTC+8: the sign is inverted in that database, and the range
+  // it covers is -14..+12, which every shift here falls inside.
+  if (shift === 0) return "UTC";
+  return shift <= 14 ? `Etc/GMT-${shift}` : `Etc/GMT+${24 - shift}`;
+}
+
+test("in the small hours, today and tomorrow are still the reader's days", async () => {
+  const zone = earlyMorningZone();
+  const ctx = await zoneContext(zone);
   try {
     let [sw] = ctx.serviceWorkers();
     sw ??= await ctx.waitForEvent("serviceworker");
     const id = new URL(sw.url()).host;
     const page = await ctx.newPage();
-    // 2026-09-25T07:00 in Shanghai is 2026-09-24T23:00Z — UTC is on the 24th.
-    await page.clock.setFixedTime(new Date("2026-09-24T23:00:00Z"));
     await page.goto(`chrome-extension://${id}/newtab.html`);
-    await page.evaluate(async () => {
-      const got = await chrome.storage.sync.get("opentabs:config");
-      const cfg = got["opentabs:config"];
-      cfg.instances.find((i: { def: string }) => i.def === "todos").enabled = true;
-      await chrome.storage.sync.set({ "opentabs:config": cfg });
-    });
+    await enableGroup(page, "todos");
     await page.reload();
 
     const input = page.locator('.card[data-id="todos"] input.newtodo').first();
@@ -194,16 +215,19 @@ test("at 07:00 in Shanghai, today and tomorrow are still the reader's days", asy
       const local = (await chrome.storage.local.get("opentabs:local"))["opentabs:local"] ?? {};
       return (local.todos ?? []).map((t: { text: string; due: number | null }) => ({ text: t.text, due: t.due }));
     });
-    const dayOf = (due: number) =>
-      new Date(due * 1000).toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+    const dayOf = (due: number) => new Date(due * 1000).toLocaleDateString("en-CA", { timeZone: zone });
     const hourOf = (due: number) =>
-      new Date(due * 1000).toLocaleTimeString("en-GB", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit" });
+      new Date(due * 1000).toLocaleTimeString("en-GB", { timeZone: zone, hour: "2-digit", minute: "2-digit" });
+    // The reader's today and tomorrow, in the reader's zone — which is a
+    // different date from UTC's for part of every day, and that is the bug.
+    const todayThere = new Date().toLocaleDateString("en-CA", { timeZone: zone });
+    const tomorrowThere = new Date(Date.now() + 86_400_000).toLocaleDateString("en-CA", { timeZone: zone });
 
     const today = stored.find((t: { text: string }) => t.text.startsWith("Send"));
     const tomorrow = stored.find((t: { text: string }) => t.text.startsWith("Call"));
-    expect(dayOf(today.due), '"today" fell on the UTC day, not the reader’s').toBe("2026-09-25");
+    expect(dayOf(today.due), `"today" fell on another day in ${zone}`).toBe(todayThere);
     expect(hourOf(today.due)).toBe("17:00");
-    expect(dayOf(tomorrow.due), '"tomorrow" fell on the UTC day, not the reader’s').toBe("2026-09-26");
+    expect(dayOf(tomorrow.due), `"tomorrow" fell on another day in ${zone}`).toBe(tomorrowThere);
     expect(hourOf(tomorrow.due)).toBe("09:00");
   } finally {
     await ctx.close();
@@ -227,11 +251,8 @@ test("a to-do stored by the old build is corrected, once", async () => {
 
     // 10:30 Shanghai, stored the old way: the clock face, stamped as UTC.
     const wrong = Date.UTC(2026, 11, 1, 10, 30, 0) / 1000;
+    await enableGroup(page, "todos");
     await page.evaluate(async (due) => {
-      const got = await chrome.storage.sync.get("opentabs:config");
-      const cfg = got["opentabs:config"];
-      cfg.instances.find((i: { def: string }) => i.def === "todos").enabled = true;
-      await chrome.storage.sync.set({ "opentabs:config": cfg });
       await chrome.storage.local.set({
         "opentabs:local": {
           todos: [{ id: "old", text: "Standup", due, hasTime: true, done: false, created: 1 }],

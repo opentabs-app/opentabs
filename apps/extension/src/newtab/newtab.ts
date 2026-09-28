@@ -13,7 +13,7 @@ import { ext, isFirefox, KEY, getLocal, getSync, setLocal } from "../lib/ext";
 import { profilePickerUrl } from "../lib/profiles";
 import { PLATFORM_MATCH } from "../lib/account";
 import { applyTheme } from "../lib/theme";
-import type { Config, LocalState, Payloads } from "../lib/types";
+import type { Config, Instance, LocalState, Payloads } from "../lib/types";
 import { makeArrangeable, packGrid, watchGrid, type Span } from "./layout";
 import {
   markBookmarked, renderApps, renderBookmarks, renderCalendar, renderFocus, renderScratch,
@@ -210,14 +210,72 @@ async function main() {
   }
 
   // Tab state changes constantly; ask for a re-group after paint so the
-  // count is right without ever blocking the first frame.
-  void ext.runtime.sendMessage({ type: "refreshTabs" }).catch(() => {});
+  // count is right without ever blocking the first frame — and then show what
+  // came back, or say plainly that nothing did.
+  const tabsInst = instances.find((i) => i.def === "tabs" && i.enabled);
+  if (tabsInst) void syncTabsCard(grid, tabsInst, payloads["tabs"]?.generated_at ?? 0);
   // Same reasoning for the bookmark marks: a decoration on rows that are
   // already on screen, never a condition of them getting there.
   void ext.runtime
     .sendMessage({ type: "bookmarkedUrls" })
     .then((r: { urls?: string[] | null }) => markBookmarked(grid, r?.urls ?? null))
     .catch(() => {});
+}
+
+/**
+ * Bring the tabs card up to date after first paint, or admit it is not live.
+ *
+ * This card claims to be the tabs you have open right now. It renders from
+ * the last grouping the worker stored, which is the right way round for a
+ * fast first frame — but only if the request that follows actually lands.
+ *
+ * When the worker cannot start, that request fails and nothing on screen
+ * changed: the card went on listing tabs that had been closed hours earlier,
+ * and tabs opened since were missing. Silent staleness on the one card whose
+ * whole promise is liveness. Found on a real profile whose worker had been
+ * dead for eight hours — every card was frozen, and only this one looked
+ * wrong enough to notice.
+ */
+async function syncTabsCard(grid: HTMLElement, inst: Instance, renderedAt: number): Promise<void> {
+  const redraw = (node: HTMLElement) => {
+    const old = grid.querySelector<HTMLElement>(`.card[data-id="${CSS.escape(inst.id)}"]`);
+    if (!old) return;
+    makeArrangeable(node, inst.id, {
+      span: inst.opts.span as Span | undefined,
+      collapsed: inst.opts.collapsed as boolean | undefined,
+      rows: Number(inst.opts.rows) || undefined,
+    }, grid);
+    old.replaceWith(node);
+    packGrid(grid);
+  };
+
+  try {
+    await ext.runtime.sendMessage({ type: "refreshTabs" });
+  } catch {
+    // The worker did not start. Say so on the card rather than letting a
+    // stale list pass for a live one, and offer the one thing that fixes it.
+    const card = grid.querySelector<HTMLElement>(`.card[data-id="${CSS.escape(inst.id)}"] .card-body`);
+    if (card && !card.querySelector(".notlive")) {
+      const note = document.createElement("div");
+      note.className = "empty notlive";
+      note.textContent = "This list may be out of date — the extension's background worker is not responding.";
+      const fix = document.createElement("button");
+      fix.className = "corrob";
+      fix.textContent = "Reload the extension";
+      fix.addEventListener("click", () => ext.runtime.reload());
+      card.prepend(note, fix);
+    }
+    return;
+  }
+
+  const payloads = await getLocal<Payloads>(KEY.payloads, {});
+  const p = payloads["tabs"];
+  if (!p?.data || (p.generated_at ?? 0) <= renderedAt) return;
+  redraw(renderTabs(inst, p.data as never));
+  const total = (p.data as { total?: number }).total;
+  if (total !== undefined) {
+    document.getElementById("tabcount")!.textContent = `${total} ${total === 1 ? "tab" : "tabs"}`;
+  }
 }
 
 function setupPrompt(defaultAssistant: string) {
